@@ -1,9 +1,11 @@
 package com.armutyus.cameraxproject
 
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -21,13 +23,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
+import com.armutyus.cameraxproject.util.Permission
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
+@OptIn(ExperimentalPermissionsApi::class)
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CameraXProjectTheme {
-                val navController = rememberNavController()
+                Permission(permissionGrantedContent = { Greeting() })
+                /*val navController = rememberNavController()
                 NavHost(
                     navController = navController,
                     startDestination = "gallery_screen"
@@ -41,7 +48,7 @@ class MainActivity : ComponentActivity() {
                     composable("settings_screen") {
                         //SettingsScreen(navController = navController)
                     }
-                }
+                }*/
             }
         }
     }
