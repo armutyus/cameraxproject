@@ -1,5 +1,6 @@
 package com.armutyus.cameraxproject.util
 
+import android.app.Activity
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -21,32 +22,41 @@ fun Permission(
     permissions: List<String> = listOf(
         android.Manifest.permission.CAMERA,
         android.Manifest.permission.READ_EXTERNAL_STORAGE,
-        android.Manifest.permission.ACCESS_MEDIA_LOCATION),
+        android.Manifest.permission.ACCESS_MEDIA_LOCATION
+    ),
     permissionGrantedContent: @Composable () -> Unit = { }
 ) {
     val permissionsState = rememberMultiplePermissionsState(permissions = permissions)
-    RequestPermissions(multiplePermissionsState = permissionsState,
-        permissionGrantedContent = permissionGrantedContent)
+    RequestPermissions(
+        multiplePermissionsState = permissionsState,
+        permissionGrantedContent = permissionGrantedContent
+    )
 }
 
 @ExperimentalPermissionsApi
 @Composable
-private fun RequestPermissions(multiplePermissionsState: MultiplePermissionsState,
-                               permissionGrantedContent: @Composable (() -> Unit)
+private fun RequestPermissions(
+    multiplePermissionsState: MultiplePermissionsState,
+    permissionGrantedContent: @Composable (() -> Unit)
 ) {
+    val context = LocalContext.current
+    val activity = LocalContext.current as Activity
     if (multiplePermissionsState.allPermissionsGranted) {
         // If all permissions are granted, then show screen with the feature enabled
         permissionGrantedContent()
-        val context = LocalContext.current
-        Toast.makeText(context, "All permissions granted!", Toast.LENGTH_SHORT).show()
     } else {
         if (multiplePermissionsState.shouldShowRationale) {
-            Box(modifier = Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomCenter) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
                 Snackbar(modifier = Modifier.align(Alignment.BottomCenter), action = {
                     Button(onClick = { multiplePermissionsState.launchMultiplePermissionRequest() }) {
                         Text(text = "Give Permissions")
                     }
-                }){
+                }) {
                     Text(text = "Permissions are required to use the app.")
                 }
             }
@@ -60,7 +70,11 @@ private fun RequestPermissions(multiplePermissionsState: MultiplePermissionsStat
                     }
                 },
                 dismissButton = {
-                    Button(onClick = {  }) {
+                    Button(onClick = {
+                        activity.finish()
+                        Toast.makeText(context, "Permissions needed!", Toast.LENGTH_SHORT).show()
+                    }
+                    ) {
                         Text(text = "Deny")
                     }
                 }
