@@ -18,7 +18,7 @@ import com.google.accompanist.permissions.*
 @RequiresApi(Build.VERSION_CODES.Q)
 @ExperimentalPermissionsApi
 @Composable
-fun Permission(
+fun Permissions(
     permissions: List<String> = listOf(
         android.Manifest.permission.CAMERA,
         android.Manifest.permission.READ_EXTERNAL_STORAGE,

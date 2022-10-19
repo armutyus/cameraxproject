@@ -17,7 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.armutyus.cameraxproject.ui.camera.CameraScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
-import com.armutyus.cameraxproject.util.Permission
+import com.armutyus.cameraxproject.util.Permissions
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CameraXProjectTheme {
-                Permission(permissionGrantedContent = {
+                Permissions(permissionGrantedContent = {
                     val navController = rememberNavController()
                     NavHost(
                         navController = navController,
@@ -37,7 +37,9 @@ class MainActivity : ComponentActivity() {
                             GalleryScreen(navController = navController)
                         }
                         composable("camera_screen") {
-                            CameraScreen(navController = navController)
+                            CameraScreen(
+                                navController = navController
+                            )
                         }
                         composable("settings_screen") {
                             //SettingsScreen(navController = navController)

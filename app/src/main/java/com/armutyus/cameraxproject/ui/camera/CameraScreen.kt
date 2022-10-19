@@ -1,6 +1,7 @@
 package com.armutyus.cameraxproject.ui.camera
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -15,18 +16,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
+import com.armutyus.cameraxproject.util.Util.Companion.TAG
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(navController: NavController) {
-    val context = LocalContext.current
     Scaffold(
         topBar = {
-            TopAppBar(title = { CameraScreenText(string = "Camera") },
+            TopAppBar(
+                title = { CameraScreenText(string = "Camera") },
+                colors = TopAppBarDefaults.smallTopAppBarColors(),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -76,11 +78,13 @@ fun CameraContent(modifier: Modifier = Modifier) {
         }
     } else {
         CameraCapture(
-            modifier = modifier,
-            onImageFile = { file ->
-                imageUri = file.toUri()
-            }
-        )
+            onImageCaptured = { uri, fromGallery ->
+                Log.d(TAG, "Image captured successfully")
+                imageUri = uri
+            },
+            onError = { imageCaptureException ->
+                Log.e(TAG, imageCaptureException.localizedMessage ?: "Image capture failed")
+            })
     }
 }
 

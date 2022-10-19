@@ -1,74 +1,51 @@
 package com.armutyus.cameraxproject.ui.camera
 
-import android.util.Log
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.Preview
-import androidx.camera.core.UseCase
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.camera.core.ImageCaptureException
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.unit.dp
-import com.armutyus.cameraxproject.util.CaptureButton
-import com.armutyus.cameraxproject.util.executor
-import com.armutyus.cameraxproject.util.getCameraProvider
+import com.armutyus.cameraxproject.util.getOutputDirectory
 import com.armutyus.cameraxproject.util.takePicture
-import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun CameraCapture(
-    modifier: Modifier = Modifier,
-    cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-    onImageFile: (File) -> Unit = { }
+    onImageCaptured: (Uri, Boolean) -> Unit,
+    onError: (ImageCaptureException) -> Unit
 ) {
+
     val context = LocalContext.current
-    Box(modifier = modifier) {
-        val lifecycleOwner = LocalLifecycleOwner.current
-        val coroutineScope = rememberCoroutineScope()
-        var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
-        val imageCaptureUseCase by remember {
-            mutableStateOf(
-                ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .build()
-            )
-        }
-        Box {
-            CameraPreview(
-                modifier = Modifier.fillMaxSize(),
-                onUseCase = {
-                    previewUseCase = it
+    var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
+    val imageCapture: ImageCapture = remember {
+        ImageCapture.Builder().build()
+    }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) onImageCaptured(uri, true)
+    }
+
+    CameraPreviewView(
+        imageCapture,
+        lensFacing
+    ) { cameraUIAction ->
+        when (cameraUIAction) {
+            is CameraUIAction.OnCameraClick -> {
+                imageCapture.takePicture(context, lensFacing, onImageCaptured, onError)
+            }
+            is CameraUIAction.OnSwitchCameraClick -> {
+                lensFacing =
+                    if (lensFacing == CameraSelector.LENS_FACING_BACK) CameraSelector.LENS_FACING_FRONT
+                    else
+                        CameraSelector.LENS_FACING_BACK
+            }
+            is CameraUIAction.OnGalleryViewClick -> {
+                if (true == context.getOutputDirectory().listFiles()?.isNotEmpty()) {
+                    galleryLauncher.launch("image/*")
                 }
-            )
-            CaptureButton(
-                modifier = Modifier
-                    .size(100.dp)
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter),
-                onClick = {
-                    coroutineScope.launch {
-                        onImageFile(imageCaptureUseCase.takePicture(context.executor))
-                    }
-                }
-            )
-        }
-        LaunchedEffect(previewUseCase) {
-            val cameraProvider = context.getCameraProvider()
-            try {
-                // Must unbind the use-cases before rebinding them.
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner, cameraSelector, previewUseCase, imageCaptureUseCase
-                )
-            } catch (ex: Exception) {
-                Log.e("CameraCapture", "Failed to bind camera use cases", ex)
             }
         }
     }
