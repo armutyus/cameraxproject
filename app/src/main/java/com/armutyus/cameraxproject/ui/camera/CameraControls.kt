@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.outlined.Cameraswitch
-import androidx.compose.material.icons.outlined.Flip
-import androidx.compose.material.icons.outlined.FlipCameraAndroid
-import androidx.compose.material.icons.outlined.PhotoCameraBack
 import androidx.compose.material.icons.sharp.Cameraswitch
 import androidx.compose.material.icons.sharp.Lens
 import androidx.compose.material3.Icon
@@ -38,7 +34,7 @@ fun CameraControls(cameraUIAction: (CameraUIAction) -> Unit) {
             Icons.Filled.Circle,
             R.string.app_name,
             modifier = Modifier.size(48.dp),
-            onClick = { cameraUIAction(CameraUIAction.OnSwitchCameraClick) }
+            onClick = { cameraUIAction(CameraUIAction.OnGalleryViewClick) }
         )
 
         CameraControl(
@@ -55,7 +51,7 @@ fun CameraControls(cameraUIAction: (CameraUIAction) -> Unit) {
             Icons.Sharp.Cameraswitch,
             R.string.app_name,
             modifier = Modifier.size(48.dp),
-            onClick = { cameraUIAction(CameraUIAction.OnGalleryViewClick) }
+            onClick = { cameraUIAction(CameraUIAction.OnSwitchCameraClick) }
         )
 
     }
