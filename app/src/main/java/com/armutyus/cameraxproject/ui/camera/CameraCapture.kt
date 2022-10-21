@@ -8,16 +8,21 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import com.armutyus.cameraxproject.util.getOutputDirectory
 import com.armutyus.cameraxproject.util.takePicture
+import kotlinx.coroutines.launch
 
 @Composable
 fun CameraCapture(
+    imageUri: Uri,
+    navController: NavController,
     onImageCaptured: (Uri, Boolean) -> Unit,
     onError: (ImageCaptureException) -> Unit
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     val imageCapture: ImageCapture = remember {
         ImageCapture.Builder().build()
@@ -29,12 +34,18 @@ fun CameraCapture(
     }
 
     CameraPreviewView(
+        imageUri,
         imageCapture,
-        lensFacing
+        lensFacing,
+        navController,
     ) { cameraUIAction ->
         when (cameraUIAction) {
             is CameraUIAction.OnCameraClick -> {
-                imageCapture.takePicture(context, lensFacing, onImageCaptured, onError)
+                scope.launch {
+                    imageCapture.takePicture(context, lensFacing, onError)?.let {
+                        onImageCaptured(it, false)
+                    }
+                }
             }
             is CameraUIAction.OnSwitchCameraClick -> {
                 lensFacing =

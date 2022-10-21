@@ -1,5 +1,6 @@
 package com.armutyus.cameraxproject.ui.camera
 
+import android.net.Uri
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -16,13 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import com.armutyus.cameraxproject.util.CameraControls
+import androidx.navigation.NavController
 import com.armutyus.cameraxproject.util.getCameraProvider
 
 @Composable
 fun CameraPreviewView(
+    imageUri: Uri,
     imageCapture: ImageCapture,
     lensFacing: Int = CameraSelector.LENS_FACING_BACK,
+    navContreller: NavController,
     cameraUIAction: (CameraUIAction) -> Unit
 ) {
 
@@ -52,10 +55,16 @@ fun CameraPreviewView(
 
         }
         Column(
+            modifier = Modifier.align(Alignment.TopCenter),
+            verticalArrangement = Arrangement.Top
+        ) {
+            TopAppBarActionButtonsRow(navController = navContreller)
+        }
+        Column(
             modifier = Modifier.align(Alignment.BottomCenter),
             verticalArrangement = Arrangement.Bottom
         ) {
-            CameraControls(cameraUIAction)
+            CameraControls(imageUri, cameraUIAction)
         }
 
     }

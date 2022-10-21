@@ -17,6 +17,8 @@ import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,42 +40,47 @@ suspend fun Context.getCameraProvider(): ProcessCameraProvider =
 val Context.executor: Executor
     get() = ContextCompat.getMainExecutor(this)
 
-fun ImageCapture.takePicture(
+suspend fun ImageCapture.takePicture(
     context: Context,
     lensFacing: Int,
-    onImageCaptured: (Uri, Boolean) -> Unit,
     onError: (ImageCaptureException) -> Unit
-) {
+): Uri? {
     val outputDirectory = context.getOutputDirectory()
     // Create output file to hold the image
-    val photoFile = createFile(outputDirectory, FILENAME, PHOTO_EXTENSION)
-    val outputFileOptions = getOutputFileOptions(lensFacing, photoFile)
+    val photoFile = withContext(Dispatchers.IO) {
+        createFile(outputDirectory, FILENAME, PHOTO_EXTENSION)
+    }
 
-    this.takePicture(
-        outputFileOptions,
-        Executors.newSingleThreadExecutor(),
-        object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val savedUri = output.savedUri ?: Uri.fromFile(photoFile)
-                // If the folder selected is an external media directory, this is
-                // unnecessary but otherwise other apps will not be able to access our
-                // images unless we scan them using [MediaScannerConnection]
-                val mimeType = MimeTypeMap.getSingleton()
-                    .getMimeTypeFromExtension(savedUri.toFile().extension)
-                MediaScannerConnection.scanFile(
-                    context,
-                    arrayOf(savedUri.toFile().absolutePath),
-                    arrayOf(mimeType)
-                ) { _, uri ->
-                    Log.d(TAG, "Image capture scanned into media store: $uri")
+    return suspendCoroutine { continuation ->
+        val outputFileOptions = getOutputFileOptions(lensFacing, photoFile)
+
+        takePicture(
+            outputFileOptions,
+            Executors.newSingleThreadExecutor(),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    val savedUri = output.savedUri ?: Uri.fromFile(photoFile)
+                    // If the folder selected is an external media directory, this is
+                    // unnecessary but otherwise other apps will not be able to access our
+                    // images unless we scan them using [MediaScannerConnection]
+                    val mimeType = MimeTypeMap.getSingleton()
+                        .getMimeTypeFromExtension(savedUri.toFile().extension)
+                    MediaScannerConnection.scanFile(
+                        context,
+                        arrayOf(savedUri.toFile().absolutePath),
+                        arrayOf(mimeType)
+                    ) { _, uri ->
+                        Log.d(TAG, "Image capture scanned into media store: $uri")
+                    }
+                    continuation.resume(savedUri)
                 }
-                onImageCaptured(savedUri, false)
-            }
 
-            override fun onError(exception: ImageCaptureException) {
-                onError(exception)
+                override fun onError(exception: ImageCaptureException) {
+                    onError(exception)
+                }
             }
-        })
+        )
+    }
 }
 
 fun getOutputFileOptions(
