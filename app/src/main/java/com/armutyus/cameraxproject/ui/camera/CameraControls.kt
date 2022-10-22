@@ -10,10 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -21,7 +23,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.util.Util.Companion.FLASH_AUTO
+import com.armutyus.cameraxproject.util.Util.Companion.FLASH_OFF
+import com.armutyus.cameraxproject.util.Util.Companion.FLASH_ON
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 
 @Composable
 fun CameraControls(imageUri: Uri, cameraUIAction: (CameraUIAction) -> Unit) {
@@ -39,33 +48,17 @@ fun CameraControls(imageUri: Uri, cameraUIAction: (CameraUIAction) -> Unit) {
         Image(
             modifier = Modifier
                 .size(48.dp)
+                .clip(CircleShape)
                 .border(width = 1.dp, color = Color.White, shape = CircleShape)
                 .clickable { cameraUIAction(CameraUIAction.OnGalleryViewClick) },
-            painter = rememberAsyncImagePainter(imageUri),
+            painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(data = imageUri)
+                    .build(),
+                filterQuality = FilterQuality.Medium),
             contentDescription = "Latest captured image",
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.FillBounds
         )
-
-        /*AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(imageUri)
-                .crossfade(true)
-                .build(),
-            contentDescription = "Latest captured image",
-            imageLoader = ImageLoader(context),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(48.dp)
-                .border(width = 1.dp, color = Color.White, shape = CircleShape)
-                .clickable { cameraUIAction(CameraUIAction.OnGalleryViewClick) }
-        )
-
-        CameraControl(
-            Icons.Sharp.Circle,
-            R.string.app_name,
-            modifier = Modifier.size(48.dp),
-            onClick = { cameraUIAction(CameraUIAction.OnGalleryViewClick) }
-        )*/
 
         CameraControl(
             Icons.Sharp.Lens,
@@ -113,22 +106,52 @@ fun CameraControl(
 @Composable
 fun TopAppBarActionButtonsRow(navController: NavController) {
 
+    var timerIconState by remember { mutableStateOf(TIMER_OFF) }
+    var flashIconState by remember { mutableStateOf(FLASH_OFF) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .border(width = 0.5.dp, shape = CircleShape, color = Color.White),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = {
+            if (timerIconState == TIMER_OFF) {
+                timerIconState = TIMER_3S
+            } else if (timerIconState == TIMER_3S) {
+                timerIconState = TIMER_10S
+            } else {
+                timerIconState = TIMER_OFF
+            }
+        }) {
             Icon(
-                imageVector = Icons.Sharp.Timer,
+                imageVector = when (timerIconState) {
+                    TIMER_OFF -> Icons.Sharp.TimerOff
+                    TIMER_3S -> Icons.Sharp.Timer3
+                    TIMER_10S -> Icons.Sharp.Timer10
+                    else -> Icons.Sharp.TimerOff
+                                                    },
                 contentDescription = "Go to settings"
             )
         }
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = {
+            if (flashIconState == FLASH_OFF) {
+                flashIconState = FLASH_ON
+            } else if (flashIconState == FLASH_ON) {
+                flashIconState = FLASH_AUTO
+            } else {
+                flashIconState = FLASH_OFF
+            }
+        }) {
             Icon(
-                imageVector = Icons.Sharp.FlashOn,
+                imageVector = when (flashIconState) {
+                    FLASH_OFF -> Icons.Sharp.FlashOff
+                    FLASH_ON -> Icons.Sharp.FlashOn
+                    FLASH_AUTO -> Icons.Sharp.FlashAuto
+                    else -> Icons.Sharp.FlashOff
+                },
                 contentDescription = "Change flash settings"
             )
         }

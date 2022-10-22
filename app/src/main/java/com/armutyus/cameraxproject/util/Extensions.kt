@@ -108,7 +108,7 @@ fun createFile(baseFolder: File, format: String, extension: String) =
 
 fun Context.getOutputDirectory(): File {
     val mediaDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
-        File(it, this.resources.getString(R.string.app_name)).apply { mkdirs() }
+        File(it, "cameraXproject").apply { mkdirs() }
     }
     return if (mediaDir != null && mediaDir.exists())
         mediaDir else this.filesDir
