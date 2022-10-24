@@ -5,6 +5,8 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import android.view.HapticFeedbackConstants
+import android.view.View
 import android.webkit.MimeTypeMap
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -13,7 +15,6 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
-import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
@@ -112,6 +113,14 @@ fun Context.getOutputDirectory(): File {
     }
     return if (mediaDir != null && mediaDir.exists())
         mediaDir else this.filesDir
+}
+
+fun View.vibrate(feedbackConstant: Int) {
+    // Either this needs to be set to true, or android:hapticFeedbackEnabled="true" needs to be set in XML
+    isHapticFeedbackEnabled = true
+    // Most of the constants are off by default: for example, clicking on a button doesn't cause the phone to vibrate anymore
+    // if we still want to access this vibration, we'll have to ignore the global settings on that.
+    performHapticFeedback(feedbackConstant, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
 }
 
 

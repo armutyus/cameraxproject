@@ -22,7 +22,8 @@ fun Permissions(
     permissions: List<String> = listOf(
         android.Manifest.permission.CAMERA,
         android.Manifest.permission.READ_EXTERNAL_STORAGE,
-        android.Manifest.permission.ACCESS_MEDIA_LOCATION
+        android.Manifest.permission.ACCESS_MEDIA_LOCATION,
+        android.Manifest.permission.RECORD_AUDIO
     ),
     permissionGrantedContent: @Composable () -> Unit = { }
 ) {

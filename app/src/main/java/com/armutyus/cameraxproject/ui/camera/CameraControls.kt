@@ -1,6 +1,8 @@
 package com.armutyus.cameraxproject.ui.camera
 
 import android.net.Uri
+import android.view.HapticFeedbackConstants
+import android.view.View
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,8 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,7 +20,10 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -31,57 +35,36 @@ import com.armutyus.cameraxproject.util.Util.Companion.FLASH_ON
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
+import com.armutyus.cameraxproject.util.vibrate
 
 @Composable
 fun CameraControls(imageUri: Uri, cameraUIAction: (CameraUIAction) -> Unit) {
 
-    val context = LocalContext.current
+    val view = LocalView.current
+    val cameraModes = listOf(
+        "Photo",
+        "Video"
+    )
+    var selectedMode by remember {
+        mutableStateOf("")
+    }
+    val onSelectionChange = { text: String ->
+        selectedMode = text
+    }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Image(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .border(width = 1.dp, color = Color.White, shape = CircleShape)
-                .clickable { cameraUIAction(CameraUIAction.OnGalleryViewClick) },
-            painter = rememberAsyncImagePainter(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(data = imageUri)
-                    .build(),
-                filterQuality = FilterQuality.Medium),
-            contentDescription = "Latest captured image",
-            contentScale = ContentScale.FillBounds
+        CameraModeRow(
+            cameraModes = cameraModes,
+            onSelectionChange = onSelectionChange,
+            selectedMode = selectedMode
         )
-
-        CameraControl(
-            Icons.Sharp.Lens,
-            R.string.app_name,
-            modifier = Modifier
-                .size(64.dp)
-                .padding(1.dp)
-                .border(1.dp, Color.White, CircleShape),
-            onClick = { cameraUIAction(CameraUIAction.OnCameraClick) }
-        )
-
-        CameraControl(
-            Icons.Sharp.FlipCameraAndroid,
-            R.string.app_name,
-            modifier = Modifier.size(48.dp),
-            onClick = {
-                cameraUIAction(CameraUIAction.OnSwitchCameraClick)
-            }
-        )
-
+        CameraControlsRow(view = view, imageUri = imageUri, cameraUIAction = cameraUIAction)
     }
 }
-
 
 @Composable
 fun CameraControl(
@@ -100,6 +83,87 @@ fun CameraControl(
             modifier = modifier,
             tint = Color.White
         )
+    }
+}
+
+@Composable
+fun CameraControlsRow(view: View, imageUri: Uri, cameraUIAction: (CameraUIAction) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .absolutePadding(left = 24.dp, right = 24.dp, bottom = 24.dp, top = 0.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Image(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .border(width = 1.dp, color = Color.White, shape = CircleShape)
+                .clickable { cameraUIAction(CameraUIAction.OnGalleryViewClick) },
+            painter = rememberAsyncImagePainter(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(data = imageUri)
+                    .build(),
+                filterQuality = FilterQuality.Medium
+            ),
+            contentDescription = "Latest captured image",
+            contentScale = ContentScale.Crop
+        )
+        CameraControl(
+            Icons.Sharp.Lens,
+            R.string.app_name,
+            modifier = Modifier
+                .size(64.dp)
+                .padding(1.dp)
+                .border(1.dp, Color.White, CircleShape),
+            onClick = {
+                view.vibrate(HapticFeedbackConstants.LONG_PRESS)
+                cameraUIAction(CameraUIAction.OnCameraClick)
+            }
+        )
+
+        CameraControl(
+            Icons.Sharp.FlipCameraAndroid,
+            R.string.app_name,
+            modifier = Modifier.size(48.dp),
+            onClick = {
+                view.vibrate(HapticFeedbackConstants.LONG_PRESS)
+                cameraUIAction(CameraUIAction.OnSwitchCameraClick)
+            }
+        )
+    }
+}
+
+@Composable
+fun CameraModeRow(
+    cameraModes: List<String>,
+    onSelectionChange: (String) -> Unit,
+    selectedMode: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        cameraModes.forEach { text ->
+            TextButton(
+                onClick = { onSelectionChange(text) }
+            ) {
+                Text(
+                    text = text,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = if (text == selectedMode) {
+                        Color.Red
+                    } else {
+                        Color.White
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -132,7 +196,7 @@ fun TopAppBarActionButtonsRow(navController: NavController) {
                     TIMER_3S -> Icons.Sharp.Timer3
                     TIMER_10S -> Icons.Sharp.Timer10
                     else -> Icons.Sharp.TimerOff
-                                                    },
+                },
                 contentDescription = "Go to settings"
             )
         }
