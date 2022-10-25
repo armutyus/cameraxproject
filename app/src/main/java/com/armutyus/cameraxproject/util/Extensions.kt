@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.webkit.MimeTypeMap
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.Metadata
@@ -17,16 +18,23 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
+import com.armutyus.cameraxproject.util.Util.Companion.RATIO_16_9_VALUE
+import com.armutyus.cameraxproject.util.Util.Companion.RATIO_4_3_VALUE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.Collections.max
+import java.util.Collections.min
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 suspend fun Context.getCameraProvider(): ProcessCameraProvider =
     suspendCoroutine { continuation ->
@@ -46,7 +54,7 @@ suspend fun ImageCapture.takePicture(
     lensFacing: Int,
     onError: (ImageCaptureException) -> Unit
 ): Uri? {
-    val outputDirectory = context.getOutputDirectory()
+    val outputDirectory = context.getOutputDirectory("Photo")
     // Create output file to hold the image
     val photoFile = withContext(Dispatchers.IO) {
         createFile(outputDirectory, FILENAME, PHOTO_EXTENSION)
@@ -88,7 +96,6 @@ fun getOutputFileOptions(
     lensFacing: Int,
     photoFile: File
 ): ImageCapture.OutputFileOptions {
-
     // Setup image capture metadata
     val metadata = Metadata().apply {
         // Mirror image when using the front camera
@@ -107,9 +114,9 @@ fun createFile(baseFolder: File, format: String, extension: String) =
     )
 
 
-fun Context.getOutputDirectory(): File {
-    val mediaDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
-        File(it, "cameraXproject").apply { mkdirs() }
+fun Context.getOutputDirectory(directory: String): File {
+    val mediaDir = this.getExternalFilesDir("cameraXproject")?.let {
+        File(it, directory).apply { mkdirs() }
     }
     return if (mediaDir != null && mediaDir.exists())
         mediaDir else this.filesDir
@@ -121,6 +128,15 @@ fun View.vibrate(feedbackConstant: Int) {
     // Most of the constants are off by default: for example, clicking on a button doesn't cause the phone to vibrate anymore
     // if we still want to access this vibration, we'll have to ignore the global settings on that.
     performHapticFeedback(feedbackConstant, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
+}
+
+
+fun aspectRatio(width: Int, height: Int): Int {
+    val previewRatio = max(width, height).toDouble() / min(width, height)
+    if (abs(previewRatio - RATIO_4_3_VALUE) <= abs(previewRatio - RATIO_16_9_VALUE)) {
+        return AspectRatio.RATIO_4_3
+    }
+    return AspectRatio.RATIO_16_9
 }
 
 

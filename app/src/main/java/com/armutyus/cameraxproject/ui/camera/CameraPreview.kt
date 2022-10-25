@@ -25,14 +25,19 @@ fun CameraPreviewView(
     imageUri: Uri,
     imageCapture: ImageCapture,
     lensFacing: Int = CameraSelector.LENS_FACING_BACK,
-    navContreller: NavController,
+    navController: NavController,
+    rotationState: Int,
+    screenAspectRatio: Int,
     cameraUIAction: (CameraUIAction) -> Unit
 ) {
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val preview = Preview.Builder().build()
+    val preview = Preview.Builder()
+        .setTargetAspectRatio(screenAspectRatio)
+        .setTargetRotation(rotationState)
+        .build()
     val cameraSelector = CameraSelector.Builder()
         .requireLensFacing(lensFacing)
         .build()
@@ -58,7 +63,7 @@ fun CameraPreviewView(
             modifier = Modifier.align(Alignment.TopCenter),
             verticalArrangement = Arrangement.Top
         ) {
-            TopAppBarActionButtonsRow(navController = navContreller)
+            TopAppBarActionButtonsRow(navController = navController)
         }
         Column(
             modifier = Modifier.align(Alignment.BottomCenter),

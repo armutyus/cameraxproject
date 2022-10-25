@@ -1,7 +1,6 @@
 package com.armutyus.cameraxproject.ui.camera
 
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -21,15 +20,15 @@ fun CameraScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        CameraContent(navController, Modifier.fillMaxSize())
+        CameraContent(navController)
     }
 }
 
 @Composable
-fun CameraContent(navController: NavController, modifier: Modifier = Modifier) {
+fun CameraContent(navController: NavController) {
     val context = LocalContext.current
-    val mediaDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
-        File(it, "cameraXproject").apply { mkdirs() }
+    val mediaDir = context.getExternalFilesDir("cameraXproject")?.let {
+        File(it, "Photo").apply { mkdirs() }
     }
     val latestCapturedItem =
         mediaDir?.listFiles()?.lastOrNull()

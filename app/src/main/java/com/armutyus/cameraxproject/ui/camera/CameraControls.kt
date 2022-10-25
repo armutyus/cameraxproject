@@ -46,7 +46,7 @@ fun CameraControls(imageUri: Uri, cameraUIAction: (CameraUIAction) -> Unit) {
         "Video"
     )
     var selectedMode by remember {
-        mutableStateOf("")
+        mutableStateOf("Photo")
     }
     val onSelectionChange = { text: String ->
         selectedMode = text
@@ -144,7 +144,7 @@ fun CameraModeRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {

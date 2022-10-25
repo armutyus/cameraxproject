@@ -56,6 +56,6 @@ class MainActivity : ComponentActivity() {
 fun DefaultPreview() {
     val context = LocalContext.current
     CameraXProjectTheme {
-        GalleryScreen(navController = NavController(context))
+        CameraScreen(navController = NavController(context))
     }
 }
