@@ -23,7 +23,10 @@ class FileManager(private val context: Context) {
                 FILENAME,
                 Locale.getDefault()
             ).format(System.currentTimeMillis())
-            return@withContext File(getPrivateFileDirectory(directory), "$timestamp.$ext").canonicalPath
+            return@withContext File(
+                getPrivateFileDirectory(directory),
+                "$timestamp.$ext"
+            ).canonicalPath
         }
     }
 

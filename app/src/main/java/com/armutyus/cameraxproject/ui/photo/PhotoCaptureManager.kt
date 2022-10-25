@@ -1,7 +1,6 @@
 package com.armutyus.cameraxproject.ui.photo
 
 import android.content.Context
-import android.content.res.Configuration
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.util.Log
@@ -11,8 +10,7 @@ import android.webkit.MimeTypeMap
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.compositionLocalOf
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
 import androidx.lifecycle.Lifecycle
@@ -26,7 +24,6 @@ import com.armutyus.cameraxproject.util.aspectRatio
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.util.concurrent.Executors
-import kotlin.coroutines.resume
 
 class PhotoCaptureManager private constructor(private val builder: Builder) :
     LifecycleEventObserver {
@@ -178,7 +175,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                         arrayOf(savedUri.toFile().absolutePath),
                         arrayOf(mimeType)
                     ) { _, uri ->
-                        Log.d(Util.TAG, "Image capture scanned into media store: $uri")
+                        Log.d(TAG, "Image capture scanned into media store: $uri")
                     }
                     photoListener.onSuccess(output)
                 }
@@ -229,4 +226,5 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     }
 }
 
-val LocalPhotoCaptureManager = compositionLocalOf<PhotoCaptureManager> { error("No capture manager found!") }
+val LocalPhotoCaptureManager =
+    compositionLocalOf<PhotoCaptureManager> { error("No capture manager found!") }

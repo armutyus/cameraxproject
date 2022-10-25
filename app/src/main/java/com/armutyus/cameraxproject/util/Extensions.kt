@@ -3,7 +3,6 @@ package com.armutyus.cameraxproject.util
 import android.content.Context
 import android.media.MediaScannerConnection
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
@@ -26,8 +25,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.Collections.max
-import java.util.Collections.min
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume

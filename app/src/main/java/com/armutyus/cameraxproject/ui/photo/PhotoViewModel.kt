@@ -12,7 +12,6 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.lang.IllegalArgumentException
 
 class PhotoViewModel constructor(private val fileManager: FileManager) : ViewModel() {
 
@@ -65,7 +64,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     private fun onCaptureTapped() {
         viewModelScope.launch {
             try {
-                val filePath = fileManager.createFile("photos", "jpeg")
+                val filePath = fileManager.createFile("Photos", "jpeg")
                 _effect.emit(Effect.CaptureImage(filePath))
             } catch (exception: IllegalArgumentException) {
                 Log.e(TAG, exception.localizedMessage ?: "Image capture failed.")
@@ -82,7 +81,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 )
             }
         } else {
-            val mediaDir = fileManager.getPrivateFileDirectory("photos")
+            val mediaDir = fileManager.getPrivateFileDirectory("Photos")
             val latestImageUri = mediaDir?.listFiles()?.lastOrNull()?.toUri() ?: Uri.EMPTY
             _state.update {
                 it.copy(

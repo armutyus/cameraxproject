@@ -9,8 +9,9 @@ import androidx.camera.core.TorchState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.*
@@ -24,9 +25,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+
+@Preview
+@Composable
+fun DefaultPreview() {
+    CameraCaptureIcon(modifier = Modifier, view = LocalView.current) {
+
+    }
+}
 
 @Composable
 fun CameraPreviewIcon(modifier: Modifier, imageUri: Uri, onTapped: () -> Unit) {
@@ -69,8 +80,9 @@ fun CameraCaptureIcon(modifier: Modifier, view: View, onTapped: () -> Unit) {
         },
         content = {
             Icon(
+                modifier = modifier.size(60.dp),
                 imageVector = Icons.Sharp.Lens,
-                contentDescription = "Pause video"
+                contentDescription = "Capture image"
             )
         }
     )
@@ -183,7 +195,7 @@ fun CameraFlipIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
-                  },
+        },
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -195,7 +207,11 @@ fun CameraFlipIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
 }
 
 @Composable
-fun CameraTorchIcon(modifier: Modifier = Modifier, @TorchState.State torchState: Int, onTapped: () -> Unit) {
+fun CameraTorchIcon(
+    modifier: Modifier = Modifier,
+    @TorchState.State torchState: Int,
+    onTapped: () -> Unit
+) {
     IconButton(
         modifier = Modifier
             .then(modifier),
@@ -214,14 +230,18 @@ fun CameraTorchIcon(modifier: Modifier = Modifier, @TorchState.State torchState:
 }
 
 @Composable
-fun CameraFlashIcon(modifier: Modifier = Modifier, @ImageCapture.FlashMode flashMode: Int, onTapped: () -> Unit) {
+fun CameraFlashIcon(
+    modifier: Modifier = Modifier,
+    @ImageCapture.FlashMode flashMode: Int,
+    onTapped: () -> Unit
+) {
     IconButton(
         modifier = Modifier
             .then(modifier),
         onClick = { onTapped() },
         content = {
             Icon(
-                imageVector = when(flashMode) {
+                imageVector = when (flashMode) {
                     ImageCapture.FLASH_MODE_AUTO -> Icons.Sharp.FlashAuto
                     ImageCapture.FLASH_MODE_OFF -> Icons.Sharp.FlashOff
                     ImageCapture.FLASH_MODE_ON -> Icons.Sharp.FlashOn
@@ -236,9 +256,11 @@ fun CameraFlashIcon(modifier: Modifier = Modifier, @ImageCapture.FlashMode flash
 @Composable
 fun Timer(modifier: Modifier = Modifier, seconds: Int) {
     if (seconds > 0) {
-        Box(modifier = Modifier
-            .padding(vertical = 24.dp)
-            .then(modifier)) {
+        Box(
+            modifier = Modifier
+                .padding(vertical = 24.dp)
+                .then(modifier)
+        ) {
             Text(
                 text = DateUtils.formatElapsedTime(seconds.toLong()),
                 color = Color.White,

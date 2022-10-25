@@ -40,7 +40,7 @@ fun CameraCapture(
     val configuration = LocalConfiguration.current
     val rotation = configuration.orientation
     var rotationState by remember { mutableStateOf(Configuration.ORIENTATION_PORTRAIT) }
-    Log.d(TAG,"Current orientation: $rotationState")
+    Log.d(TAG, "Current orientation: $rotationState")
     // If our configuration changes then this will launch a new coroutine scope for it
     LaunchedEffect(configuration) {
         // Save any changes to the orientation value on the configuration object
