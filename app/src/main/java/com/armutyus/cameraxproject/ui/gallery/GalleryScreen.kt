@@ -27,7 +27,7 @@ fun GalleryScreen(navController: NavController) {
     val context = LocalContext.current
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("camera_screen") }) {
+            FloatingActionButton(onClick = { navController.navigate("photo_screen") }) {
                 Icon(imageVector = Icons.Filled.Add, contentDescription = "Open Camera")
             }
         },

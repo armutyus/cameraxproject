@@ -155,9 +155,9 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
         showPreview(previewState, previewView as PreviewView)
     }
 
-    fun takePhoto(filePath: String, previewState: PreviewState) {
+    fun takePhoto(filePath: String, cameraLens: Int) {
         val photoFile = File(filePath)
-        val outputFileOptions = getOutputFileOptions(previewState, photoFile)
+        val outputFileOptions = getOutputFileOptions(cameraLens, photoFile)
 
         imageCapture.takePicture(
             outputFileOptions,
@@ -189,13 +189,13 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     }
 
     private fun getOutputFileOptions(
-        previewState: PreviewState,
+        cameraLens: Int,
         photoFile: File
     ): ImageCapture.OutputFileOptions {
         // Setup image capture metadata
         val metadata = ImageCapture.Metadata().apply {
             // Mirror image when using the front camera
-            isReversedHorizontal = previewState.cameraLens == CameraSelector.LENS_FACING_FRONT
+            isReversedHorizontal = cameraLens == CameraSelector.LENS_FACING_FRONT
         }
         // Create output options object which contains file + metadata
         return ImageCapture.OutputFileOptions.Builder(photoFile)

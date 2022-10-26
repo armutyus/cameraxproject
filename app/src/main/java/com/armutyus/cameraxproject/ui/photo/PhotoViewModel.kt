@@ -124,7 +124,6 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     sealed class Event {
         data class CameraInitialized(val cameraLensInfo: HashMap<Int, CameraInfo>) : Event()
-
         data class ImageCaptured(val imageResult: ImageCapture.OutputFileResults) : Event()
         data class Error(val exception: Exception) : Event()
 
