@@ -9,7 +9,14 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.util.FileManager
+import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
+import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -23,13 +30,38 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     fun onEvent(event: Event) {
         when (event) {
+            Event.CaptureTapped -> onCaptureTapped()
+            Event.DelayTimerTapped -> onDelayTimerTapped()
             Event.FlashTapped -> onFlashTapped()
             Event.FlipTapped -> onFlipTapped()
-            Event.CaptureTapped -> onCaptureTapped()
+            Event.SettingsTapped -> onSettingsTapped()
 
             is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo)
             is Event.Error -> onError()
             is Event.ImageCaptured -> onImageCaptured(event.imageResult.savedUri)
+        }
+    }
+
+    private fun onCaptureTapped() {
+        viewModelScope.launch {
+            try {
+                val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
+                _effect.emit(Effect.CaptureImage(filePath))
+            } catch (exception: IllegalArgumentException) {
+                Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
+                _effect.emit(Effect.ShowMessage())
+            }
+        }
+    }
+
+    private fun onDelayTimerTapped() {
+        _state.update {
+            when (_state.value.delayTimer) {
+                TIMER_OFF -> it.copy(delayTimer = TIMER_3S)
+                TIMER_3S -> it.copy(delayTimer = TIMER_10S)
+                TIMER_10S -> it.copy(delayTimer = TIMER_OFF)
+                else -> it.copy(delayTimer = TIMER_OFF)
+            }
         }
     }
 
@@ -61,15 +93,9 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onCaptureTapped() {
+    private fun onSettingsTapped() {
         viewModelScope.launch {
-            try {
-                val filePath = fileManager.createFile("Photos", "jpeg")
-                _effect.emit(Effect.CaptureImage(filePath))
-            } catch (exception: IllegalArgumentException) {
-                Log.e(TAG, exception.localizedMessage ?: "Image capture failed.")
-                _effect.emit(Effect.ShowMessage())
-            }
+            _effect.emit(Effect.NavigateTo("settings_screen"))
         }
     }
 
@@ -81,7 +107,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 )
             }
         } else {
-            val mediaDir = fileManager.getPrivateFileDirectory("Photos")
+            val mediaDir = fileManager.getPrivateFileDirectory(PHOTO_DIR)
             val latestImageUri = mediaDir?.listFiles()?.lastOrNull()?.toUri() ?: Uri.EMPTY
             _state.update {
                 it.copy(
@@ -118,6 +144,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     data class State(
         val lens: Int? = null,
         @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
+        val delayTimer: Int = TIMER_OFF,
         val lensInfo: MutableMap<Int, CameraInfo> = mutableMapOf(),
         val latestImageUri: Uri? = null
     )
@@ -127,13 +154,15 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         data class ImageCaptured(val imageResult: ImageCapture.OutputFileResults) : Event()
         data class Error(val exception: Exception) : Event()
 
+        object CaptureTapped : Event()
+        object DelayTimerTapped : Event()
         object FlashTapped : Event()
         object FlipTapped : Event()
-        object CaptureTapped : Event()
+        object SettingsTapped : Event()
     }
 
     sealed class Effect {
-        data class ShowMessage(val message: String = "Something went wrong") : Effect()
+        data class ShowMessage(val message: String = GENERAL_ERROR_MESSAGE) : Effect()
         data class CaptureImage(val filePath: String) : Effect()
         data class NavigateTo(val route: String) : Effect()
     }

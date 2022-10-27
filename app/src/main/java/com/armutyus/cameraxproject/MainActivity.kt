@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
             /*if (modelClass.isAssignableFrom(RecordingViewModel::class.java)) {
                 return RecordingViewModel(fileManager, permissionsHandler) as T
             }*/
-            throw IllegalArgumentException("Unknown ViewModel class")
+            throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
         }
     }
 

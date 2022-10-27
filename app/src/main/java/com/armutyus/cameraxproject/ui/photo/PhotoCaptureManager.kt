@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.armutyus.cameraxproject.util.PreviewState
 import com.armutyus.cameraxproject.util.Util
+import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.aspectRatio
 import com.google.common.util.concurrent.ListenableFuture
@@ -181,7 +182,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    Log.e(TAG, exception.localizedMessage ?: "Image capture error")
+                    Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
                     photoListener.onError(exception)
                 }
             }
@@ -204,7 +205,6 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     }
 
     class Builder(val context: Context) {
-
         var lifecycleOwner: LifecycleOwner? = null
             private set
 

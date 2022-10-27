@@ -26,10 +26,15 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
+import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 
 @Preview
 @Composable
@@ -59,7 +64,7 @@ fun CameraPreviewIcon(modifier: Modifier, imageUri: Uri, onTapped: () -> Unit) {
                         .build(),
                     filterQuality = FilterQuality.Medium
                 ),
-                contentDescription = "Latest captured image",
+                contentDescription = stringResource(id = R.string.latest_image),
                 contentScale = ContentScale.Crop
             )
         }
@@ -82,7 +87,7 @@ fun CameraCaptureIcon(modifier: Modifier, view: View, onTapped: () -> Unit) {
             Icon(
                 modifier = modifier.size(60.dp),
                 imageVector = Icons.Sharp.Lens,
-                contentDescription = "Capture image"
+                contentDescription = stringResource(id = R.string.capture_image)
             )
         }
     )
@@ -97,7 +102,7 @@ fun CameraPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
             Icon(
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.PauseCircle,
-                contentDescription = "Pause video"
+                contentDescription = stringResource(id = R.string.pause_video)
             )
         }
     )
@@ -114,7 +119,7 @@ fun CameraPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
             Icon(
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.PlayCircle,
-                contentDescription = "Play video"
+                contentDescription = stringResource(id = R.string.play_video)
             )
         }
     )
@@ -128,7 +133,7 @@ fun CameraPauseIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         content = {
             Icon(
                 imageVector = Icons.Sharp.PauseCircle,
-                contentDescription = "Pause recording"
+                contentDescription = stringResource(id = R.string.pause_recording)
             )
         }
     )
@@ -144,7 +149,7 @@ fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         content = {
             Icon(
                 imageVector = Icons.Sharp.PlayCircle,
-                contentDescription = "Resume recording"
+                contentDescription = stringResource(id = R.string.resume_recording)
             )
         }
     )
@@ -163,7 +168,7 @@ fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> 
             Icon(
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.ModeStandby,
-                contentDescription = "Start recording"
+                contentDescription = stringResource(id = R.string.start_recording)
             )
         })
 }
@@ -181,7 +186,7 @@ fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
             Icon(
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.StopCircle,
-                contentDescription = "Stop recording"
+                contentDescription = stringResource(id = R.string.stop_recording)
             )
         }
     )
@@ -200,7 +205,7 @@ fun CameraFlipIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
             Icon(
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.FlipCameraAndroid,
-                contentDescription = "Flip camera"
+                contentDescription = stringResource(id = R.string.flip_camera)
             )
         }
     )
@@ -223,16 +228,16 @@ fun CameraTorchIcon(
                 } else {
                     Icons.Sharp.FlashOn
                 },
-                contentDescription = "Change flash settings"
+                contentDescription = stringResource(id = R.string.change_flash_settings)
             )
         }
     )
 }
 
 @Composable
-fun CameraFlashIcon(
+fun CameraDelayIcon(
     modifier: Modifier = Modifier,
-    @ImageCapture.FlashMode flashMode: Int,
+    delayTimer: Int,
     onTapped: () -> Unit
 ) {
     IconButton(
@@ -241,13 +246,69 @@ fun CameraFlashIcon(
         onClick = { onTapped() },
         content = {
             Icon(
+                imageVector = when (delayTimer) {
+                    TIMER_OFF -> Icons.Sharp.TimerOff
+                    TIMER_3S -> Icons.Sharp.Timer3
+                    TIMER_10S -> Icons.Sharp.Timer10
+                    else -> Icons.Sharp.TimerOff
+                },
+                contentDescription = stringResource(id = R.string.delay_settings)
+            )
+        }
+    )
+}
+
+@Composable
+fun CameraFlashIcon(
+    modifier: Modifier = Modifier,
+    showFlashIcon: Boolean,
+    @ImageCapture.FlashMode flashMode: Int,
+    onTapped: () -> Unit
+) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { onTapped() },
+        enabled = showFlashIcon,
+        content = {
+            Icon(
                 imageVector = when (flashMode) {
                     ImageCapture.FLASH_MODE_AUTO -> Icons.Sharp.FlashAuto
                     ImageCapture.FLASH_MODE_OFF -> Icons.Sharp.FlashOff
                     ImageCapture.FLASH_MODE_ON -> Icons.Sharp.FlashOn
                     else -> Icons.Sharp.FlashOff
                 },
-                contentDescription = "Change flash settings"
+                contentDescription = stringResource(id = R.string.change_flash_settings)
+            )
+        }
+    )
+}
+
+@Composable
+fun CameraEditIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { },
+        content = {
+            Icon(
+                imageVector = Icons.Sharp.AutoFixHigh,
+                contentDescription = stringResource(id = R.string.add_filter)
+            )
+        }
+    )
+}
+
+@Composable
+fun SettingsIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { onTapped() },
+        content = {
+            Icon(
+                imageVector = Icons.Sharp.Settings,
+                contentDescription = stringResource(id = R.string.go_settings)
             )
         }
     )

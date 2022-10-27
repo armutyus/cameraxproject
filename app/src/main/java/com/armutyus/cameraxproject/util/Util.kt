@@ -13,10 +13,15 @@ class Util {
     companion object {
         const val TAG = "CameraXProject"
         const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
-        const val PHOTO_EXTENSION = ".jpg"
-        const val VIDEO_EXTENSION = ".mp4"
+        const val PHOTO_DIR = "Photos"
+        const val VIDEO_DIR = "Videos"
+        const val PHOTO_EXTENSION = "jpg"
+        const val VIDEO_EXTENSION = "mp4"
         const val RATIO_4_3_VALUE = 4.0 / 3.0
         const val RATIO_16_9_VALUE = 16.0 / 9.0
+        const val CAPTURE_FAIL = "Image capture failed."
+        const val GENERAL_ERROR_MESSAGE = "Something went wrong."
+
         const val TIMER_OFF = 0
         const val TIMER_3S = 1
         const val TIMER_10S = 2

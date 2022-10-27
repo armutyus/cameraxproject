@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.armutyus.cameraxproject.R
 import com.google.accompanist.permissions.*
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -55,28 +57,28 @@ private fun RequestPermissions(
             ) {
                 Snackbar(modifier = Modifier.align(Alignment.BottomCenter), action = {
                     Button(onClick = { multiplePermissionsState.launchMultiplePermissionRequest() }) {
-                        Text(text = "Give Permissions")
+                        Text(text = stringResource(id = R.string.give_permissions))
                     }
                 }) {
-                    Text(text = "Permissions are required to use the app.")
+                    Text(text = stringResource(id = R.string.permissions_required))
                 }
             }
         } else {
             AlertDialog(onDismissRequest = { /*TODO*/ },
-                title = { Text(text = "Permissions") },
-                text = { Text(text = "These permissions are important for the app. Please grant all of them for the app to function properly.") },
+                title = { Text(text = stringResource(id = R.string.permissions)) },
+                text = { Text(text = stringResource(id = R.string.permissions_important)) },
                 confirmButton = {
                     Button(onClick = { multiplePermissionsState.launchMultiplePermissionRequest() }) {
-                        Text(text = "Give Permissions")
+                        Text(text = stringResource(id = R.string.give_permissions))
                     }
                 },
                 dismissButton = {
                     Button(onClick = {
                         activity.finish()
-                        Toast.makeText(context, "Permissions needed!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.permissions_needed, Toast.LENGTH_SHORT).show()
                     }
                     ) {
-                        Text(text = "Deny")
+                        Text(text = stringResource(id = R.string.deny))
                     }
                 }
             )

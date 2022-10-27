@@ -225,13 +225,13 @@ fun TopAppBarActionButtonsRow(navController: NavController) {
         IconButton(onClick = { /*TODO*/ }) {
             Icon(
                 imageVector = Icons.Sharp.AutoFixHigh,
-                contentDescription = "Go to settings"
+                contentDescription = stringResource(id = R.string.add_filter)
             )
         }
         IconButton(onClick = { /*TODO*/ }) {
             Icon(
                 imageVector = Icons.Sharp.Settings,
-                contentDescription = "Go to settings"
+                contentDescription = stringResource(id = R.string.go_settings)
             )
         }
     }

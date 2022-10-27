@@ -4,10 +4,13 @@ import android.view.View
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
@@ -16,10 +19,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.armutyus.cameraxproject.util.CameraCaptureIcon
-import com.armutyus.cameraxproject.util.CameraFlashIcon
-import com.armutyus.cameraxproject.util.CameraFlipIcon
-import com.armutyus.cameraxproject.util.PreviewState
+import com.armutyus.cameraxproject.util.*
 
 @Composable
 fun PhotoScreen(
@@ -70,6 +70,7 @@ fun PhotoScreen(
     CompositionLocalProvider(LocalPhotoCaptureManager provides photoCaptureManager) {
         PhotoScreenContent(
             cameraLens = state.lens,
+            delayTimer = state.delayTimer,
             flashMode = state.flashMode,
             hasFlashUnit = state.lensInfo[state.lens]?.hasFlashUnit() ?: false,
             hasDualCamera = state.lensInfo.size > 1,
@@ -82,6 +83,7 @@ fun PhotoScreen(
 @Composable
 private fun PhotoScreenContent(
     cameraLens: Int?,
+    delayTimer: Int,
     @ImageCapture.FlashMode flashMode: Int,
     hasFlashUnit: Boolean,
     hasDualCamera: Boolean,
@@ -94,13 +96,17 @@ private fun PhotoScreenContent(
                 lens = it,
                 flashMode = flashMode
             )
-            CaptureHeader(
+            TopControls(
                 modifier = Modifier.align(Alignment.TopStart),
                 showFlashIcon = hasFlashUnit,
                 view = view,
-                flashMode = flashMode
-            ) { onEvent(PhotoViewModel.Event.FlashTapped) }
-            CaptureFooter(
+                flashMode = flashMode,
+                delayTimer = delayTimer,
+                onDelayTimerTapped = { onEvent(PhotoViewModel.Event.DelayTimerTapped) },
+                onFlashTapped =  { onEvent(PhotoViewModel.Event.FlashTapped) },
+                onSettingsTapped = { onEvent(PhotoViewModel.Event.SettingsTapped) }
+            )
+            BottomControls(
                 modifier = Modifier.align(Alignment.BottomStart),
                 showFlipIcon = hasDualCamera,
                 view = view,
@@ -112,12 +118,15 @@ private fun PhotoScreenContent(
 }
 
 @Composable
-internal fun CaptureHeader(
+internal fun TopControls(
     modifier: Modifier = Modifier,
     showFlashIcon: Boolean,
+    delayTimer: Int,
     flashMode: Int,
     view: View,
-    onFlashTapped: () -> Unit
+    onDelayTimerTapped: () -> Unit,
+    onFlashTapped: () -> Unit,
+    onSettingsTapped: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -126,14 +135,24 @@ internal fun CaptureHeader(
             .padding(8.dp)
             .then(modifier)
     ) {
-        if (showFlashIcon) {
-            CameraFlashIcon(flashMode = flashMode, onTapped = onFlashTapped)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(width = 0.5.dp, shape = CircleShape, color = Color.White),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CameraDelayIcon(delayTimer = delayTimer, onTapped = onDelayTimerTapped)
+            CameraFlashIcon(showFlashIcon = showFlashIcon, flashMode = flashMode, onTapped = onFlashTapped)
+            CameraEditIcon{}
+            SettingsIcon(onTapped = onSettingsTapped)
         }
     }
 }
 
 @Composable
-internal fun CaptureFooter(
+internal fun BottomControls(
     modifier: Modifier = Modifier,
     showFlipIcon: Boolean,
     onCaptureTapped: () -> Unit,
