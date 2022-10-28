@@ -14,11 +14,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.armutyus.cameraxproject.ui.camera.CameraScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
@@ -82,6 +80,6 @@ private fun showMessage(context: Context, message: String) {
 fun DefaultPreview() {
     val context = LocalContext.current
     CameraXProjectTheme {
-        CameraScreen(navController = NavController(context))
+
     }
 }

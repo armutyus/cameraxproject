@@ -11,10 +11,10 @@ import java.util.*
 class FileManager(private val context: Context) {
 
     fun getPrivateFileDirectory(dir: String): File? {
-        val directory = File(context.filesDir, dir)
+        val directory = File(context.getExternalFilesDir("cameraXproject"), dir)
         return if (directory.exists() || directory.mkdirs()) {
             directory
-        } else null
+        } else context.filesDir
     }
 
     suspend fun createFile(directory: String, ext: String): String {

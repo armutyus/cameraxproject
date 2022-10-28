@@ -1,7 +1,9 @@
 package com.armutyus.cameraxproject.util
 
 import android.net.Uri
+import android.os.CountDownTimer
 import android.text.format.DateUtils
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.camera.core.ImageCapture
@@ -19,6 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -27,11 +32,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
@@ -72,7 +79,7 @@ fun CameraPreviewIcon(modifier: Modifier, imageUri: Uri, onTapped: () -> Unit) {
 }
 
 @Composable
-fun CameraCaptureIcon(modifier: Modifier, view: View, onTapped: () -> Unit) {
+fun CameraCaptureIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
             .size(64.dp)
@@ -304,7 +311,7 @@ fun SettingsIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
             .then(modifier),
-        onClick = { onTapped() },
+        onClick = { },
         content = {
             Icon(
                 imageVector = Icons.Sharp.Settings,
@@ -332,4 +339,35 @@ fun Timer(modifier: Modifier = Modifier, seconds: Int) {
             )
         }
     }
+}
+
+@Composable
+fun DelayTimer(millisInFuture: Long, captureImage: () -> Unit) {
+    val timeData = remember {
+        mutableStateOf(millisInFuture)
+    }
+
+    val countDownTimer =
+        object : CountDownTimer(millisInFuture, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                Log.d(TAG, "onTick: ")
+                timeData.value = millisUntilFinished
+            }
+
+            override fun onFinish() {
+                captureImage()
+            }
+        }
+
+    DisposableEffect(key1 = "key") {
+        countDownTimer.start()
+        onDispose {
+            countDownTimer.cancel()
+        }
+    }
+
+    Text (
+        text = timeData.value.toInt().toString(),
+        textAlign = TextAlign.Center
+    )
 }

@@ -14,12 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.armutyus.cameraxproject.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 
 
@@ -30,7 +30,10 @@ fun GalleryScreen(navController: NavController) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { navController.navigate("photo_screen") }) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = stringResource(id = R.string.open_camera))
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(id = R.string.open_camera)
+                )
             }
         },
         bottomBar = {
@@ -38,7 +41,10 @@ fun GalleryScreen(navController: NavController) {
                 IconButton(onClick = {
                     Toast.makeText(context, R.string.search, Toast.LENGTH_LONG).show()
                 }) {
-                    Icon(imageVector = Icons.Sharp.Search, contentDescription = stringResource(id = R.string.search))
+                    Icon(
+                        imageVector = Icons.Sharp.Search,
+                        contentDescription = stringResource(id = R.string.search)
+                    )
                 }
             }
         }

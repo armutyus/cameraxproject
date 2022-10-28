@@ -21,13 +21,12 @@ class Util {
         const val RATIO_16_9_VALUE = 16.0 / 9.0
         const val CAPTURE_FAIL = "Image capture failed."
         const val GENERAL_ERROR_MESSAGE = "Something went wrong."
+        const val PHOTO_MODE = 0
+        const val VIDEO_MODE = 1
 
         const val TIMER_OFF = 0
-        const val TIMER_3S = 1
-        const val TIMER_10S = 2
-        const val FLASH_OFF = 0
-        const val FLASH_ON = 1
-        const val FLASH_AUTO = 2
+        const val TIMER_3S = 3000
+        const val TIMER_10S = 10000
     }
 
     object ScreenSizeCompat {

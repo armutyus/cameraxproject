@@ -75,7 +75,8 @@ private fun RequestPermissions(
                 dismissButton = {
                     Button(onClick = {
                         activity.finish()
-                        Toast.makeText(context, R.string.permissions_needed, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, R.string.permissions_needed, Toast.LENGTH_SHORT)
+                            .show()
                     }
                     ) {
                         Text(text = stringResource(id = R.string.deny))

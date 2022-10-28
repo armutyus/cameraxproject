@@ -1,6 +1,7 @@
 package com.armutyus.cameraxproject.ui.photo
 
 import android.net.Uri
+import android.os.CountDownTimer
 import android.util.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -17,6 +18,7 @@ import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -34,7 +36,10 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             Event.DelayTimerTapped -> onDelayTimerTapped()
             Event.FlashTapped -> onFlashTapped()
             Event.FlipTapped -> onFlipTapped()
+            Event.PhotoModeTapped -> onPhotoModeTapped()
             Event.SettingsTapped -> onSettingsTapped()
+            Event.ThumbnailTapped -> onThumbnailTapped()
+            Event.VideoModeTapped -> onVideoModeTapped()
 
             is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo)
             is Event.Error -> onError()
@@ -68,7 +73,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     private fun onFlashTapped() {
         _state.update {
             when (_state.value.flashMode) {
-                ImageCapture.FLASH_MODE_OFF -> it.copy(flashMode = ImageCapture.FLASH_MODE_ON)
+                ImageCapture.FLASH_MODE_OFF -> it.copy(flashMode = ImageCapture.FLASH_MODE_AUTO)
                 ImageCapture.FLASH_MODE_AUTO -> it.copy(flashMode = ImageCapture.FLASH_MODE_ON)
                 ImageCapture.FLASH_MODE_ON -> it.copy(flashMode = ImageCapture.FLASH_MODE_OFF)
                 else -> it.copy(flashMode = ImageCapture.FLASH_MODE_OFF)
@@ -93,9 +98,27 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
+    private fun onPhotoModeTapped() {
+        viewModelScope.launch {
+            _effect.emit(Effect.NavigateTo("photo_screen"))
+        }
+    }
+
     private fun onSettingsTapped() {
         viewModelScope.launch {
             _effect.emit(Effect.NavigateTo("settings_screen"))
+        }
+    }
+
+    private fun onThumbnailTapped() {
+        viewModelScope.launch {
+            _effect.emit(Effect.NavigateTo("photo_preview_screen"))
+        }
+    }
+
+    private fun onVideoModeTapped() {
+        viewModelScope.launch {
+            _effect.emit(Effect.NavigateTo("video_screen"))
         }
     }
 
@@ -142,11 +165,11 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     data class State(
-        val lens: Int? = null,
-        @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
         val delayTimer: Int = TIMER_OFF,
+        @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
+        val latestImageUri: Uri? = null,
+        val lens: Int? = null,
         val lensInfo: MutableMap<Int, CameraInfo> = mutableMapOf(),
-        val latestImageUri: Uri? = null
     )
 
     sealed class Event {
@@ -158,7 +181,10 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         object DelayTimerTapped : Event()
         object FlashTapped : Event()
         object FlipTapped : Event()
+        object PhotoModeTapped : Event()
         object SettingsTapped : Event()
+        object ThumbnailTapped : Event()
+        object VideoModeTapped : Event()
     }
 
     sealed class Effect {
