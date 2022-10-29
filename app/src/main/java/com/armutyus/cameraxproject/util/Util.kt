@@ -23,10 +23,18 @@ class Util {
         const val GENERAL_ERROR_MESSAGE = "Something went wrong."
         const val PHOTO_MODE = 0
         const val VIDEO_MODE = 1
+        const val UNKNOWN_ORIENTATION = -1
+
+        const val GALLERY_ROUTE = "gallery_screen"
+        const val PHOTO_ROUTE = "photo_screen"
+        const val SETTINGS_ROUTE = "settings_screen"
+        const val VIDEO_ROUTE = "video_screen"
 
         const val TIMER_OFF = 0
-        const val TIMER_3S = 3000
-        const val TIMER_10S = 10000
+        const val TIMER_3S = 1
+        const val TIMER_10S = 2
+        const val DELAY_3S = 3000
+        const val DELAY_10S = 10000
     }
 
     object ScreenSizeCompat {

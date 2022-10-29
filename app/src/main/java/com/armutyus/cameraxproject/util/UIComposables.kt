@@ -5,6 +5,7 @@ import android.os.CountDownTimer
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.HapticFeedbackConstants
+import android.view.Surface
 import android.view.View
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
@@ -17,15 +18,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
@@ -42,6 +42,7 @@ import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
+import java.util.concurrent.TimeUnit
 
 @Preview
 @Composable
@@ -52,7 +53,7 @@ fun DefaultPreview() {
 }
 
 @Composable
-fun CameraPreviewIcon(modifier: Modifier, imageUri: Uri, onTapped: () -> Unit) {
+fun CapturedImageThumbnailIcon(modifier: Modifier = Modifier, imageUri: Uri?, rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
             .then(modifier),
@@ -64,7 +65,16 @@ fun CameraPreviewIcon(modifier: Modifier, imageUri: Uri, onTapped: () -> Unit) {
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .border(width = 1.dp, color = Color.White, shape = CircleShape),
+                    .border(width = 1.dp, color = Color.White, shape = CircleShape)
+                    .rotate(
+                        when (rotation) {
+                            Surface.ROTATION_0 -> 0f
+                            Surface.ROTATION_90 -> 90f
+                            Surface.ROTATION_180 -> 180f
+                            Surface.ROTATION_270 -> 270f
+                            else -> 0f
+                        }
+                    ),
                 painter = rememberAsyncImagePainter(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(data = imageUri)
@@ -84,12 +94,14 @@ fun CameraCaptureIcon(modifier: Modifier = Modifier, view: View, onTapped: () ->
         modifier = Modifier
             .size(64.dp)
             .padding(1.dp)
-            .border(1.dp, Color.White, CircleShape)
-            .then(modifier),
+            .border(1.dp, Color.White, CircleShape),
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
         },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primaryContainer
+        ),
         content = {
             Icon(
                 modifier = modifier.size(60.dp),
@@ -105,6 +117,9 @@ fun CameraPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier.then(modifier),
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -122,6 +137,9 @@ fun CameraPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         modifier = Modifier
             .then(modifier),
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -137,6 +155,9 @@ fun CameraPauseIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier.then(modifier),
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = Icons.Sharp.PauseCircle,
@@ -153,6 +174,9 @@ fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         modifier = Modifier
             .then(modifier),
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = Icons.Sharp.PlayCircle,
@@ -171,6 +195,9 @@ fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> 
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
         },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -189,6 +216,9 @@ fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
         },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -200,14 +230,23 @@ fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
 }
 
 @Composable
-fun CameraFlipIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
+fun CameraFlipIcon(view: View, rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(when (rotation) {
+                Surface.ROTATION_0 -> 0f
+                Surface.ROTATION_90 -> 90f
+                Surface.ROTATION_180 -> 180f
+                Surface.ROTATION_270 -> 270f
+                else -> 0f
+            }),
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
         },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
@@ -243,14 +282,23 @@ fun CameraTorchIcon(
 
 @Composable
 fun CameraDelayIcon(
-    modifier: Modifier = Modifier,
     delayTimer: Int,
+    rotation: Int,
     onTapped: () -> Unit
 ) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(when (rotation) {
+                Surface.ROTATION_0 -> 0f
+                Surface.ROTATION_90 -> 90f
+                Surface.ROTATION_180 -> 180f
+                Surface.ROTATION_270 -> 270f
+                else -> 0f
+            }),
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = when (delayTimer) {
@@ -267,16 +315,25 @@ fun CameraDelayIcon(
 
 @Composable
 fun CameraFlashIcon(
-    modifier: Modifier = Modifier,
     showFlashIcon: Boolean,
+    rotation: Int,
     @ImageCapture.FlashMode flashMode: Int,
     onTapped: () -> Unit
 ) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(when (rotation) {
+                Surface.ROTATION_0 -> 0f
+                Surface.ROTATION_90 -> 90f
+                Surface.ROTATION_180 -> 180f
+                Surface.ROTATION_270 -> 270f
+                else -> 0f
+            }),
         onClick = { onTapped() },
         enabled = showFlashIcon,
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = when (flashMode) {
@@ -292,11 +349,20 @@ fun CameraFlashIcon(
 }
 
 @Composable
-fun CameraEditIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+fun CameraEditIcon(rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(when (rotation) {
+                Surface.ROTATION_0 -> 0f
+                Surface.ROTATION_90 -> 90f
+                Surface.ROTATION_180 -> 180f
+                Surface.ROTATION_270 -> 270f
+                else -> 0f
+            }),
         onClick = { },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = Icons.Sharp.AutoFixHigh,
@@ -307,11 +373,20 @@ fun CameraEditIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 }
 
 @Composable
-fun SettingsIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+fun SettingsIcon(rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(when (rotation) {
+                Surface.ROTATION_0 -> 0f
+                Surface.ROTATION_90 -> 90f
+                Surface.ROTATION_180 -> 180f
+                Surface.ROTATION_270 -> 270f
+                else -> 0f
+            }),
         onClick = { },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = Icons.Sharp.Settings,
@@ -327,7 +402,6 @@ fun Timer(modifier: Modifier = Modifier, seconds: Int) {
         Box(
             modifier = Modifier
                 .padding(vertical = 24.dp)
-                .then(modifier)
         ) {
             Text(
                 text = DateUtils.formatElapsedTime(seconds.toLong()),
@@ -342,32 +416,32 @@ fun Timer(modifier: Modifier = Modifier, seconds: Int) {
 }
 
 @Composable
-fun DelayTimer(millisInFuture: Long, captureImage: () -> Unit) {
+fun DelayTimer(millisInFuture: Long) {
     val timeData = remember {
         mutableStateOf(millisInFuture)
     }
 
-    val countDownTimer =
-        object : CountDownTimer(millisInFuture, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                Log.d(TAG, "onTick: ")
-                timeData.value = millisUntilFinished
-            }
-
-            override fun onFinish() {
-                captureImage()
-            }
+    val countDownTimer = object : CountDownTimer(millisInFuture, 1000) {
+        override fun onTick(millisUntilFinished: Long) {
+            Log.d(TAG, "onTick: ")
+            timeData.value = millisUntilFinished
         }
 
-    DisposableEffect(key1 = "key") {
+        override fun onFinish() {
+            Log.d(TAG, "Countdown finished.")
+        }
+    }
+
+    DisposableEffect(key1 = "key1") {
         countDownTimer.start()
         onDispose {
+            timeData.value = millisInFuture
             countDownTimer.cancel()
         }
     }
 
-    Text (
-        text = timeData.value.toInt().toString(),
+    Text(
+        text = TimeUnit.MILLISECONDS.toSeconds(timeData.value).toString(),
         textAlign = TextAlign.Center
     )
 }

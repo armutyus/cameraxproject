@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
-
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +29,21 @@ fun GalleryScreen(navController: NavController) {
     val context = LocalContext.current
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("photo_screen") }) {
+            FloatingActionButton(onClick = {
+                navController.navigate(PHOTO_ROUTE) {
+                    // Pop up to the start destination of the graph to
+                    // avoid building up a large stack of destinations
+                    // on the back stack as users select items
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
+                    // Avoid multiple copies of the same destination when
+                    // reselecting the same item
+                    launchSingleTop = true
+                    // Restore state when reselecting a previously selected item
+                    restoreState = true
+                }
+            }) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = stringResource(id = R.string.open_camera)

@@ -1,7 +1,6 @@
 package com.armutyus.cameraxproject.ui.photo
 
 import android.net.Uri
-import android.os.CountDownTimer
 import android.util.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
@@ -11,6 +10,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
 import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
@@ -48,13 +49,47 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onCaptureTapped() {
+        _state.update {
+            when (_state.value.delayTimer) {
+                TIMER_OFF -> it.copy(captureWithDelay = 0)
+                TIMER_3S -> it.copy(captureWithDelay = DELAY_3S)
+                TIMER_10S -> it.copy(captureWithDelay = DELAY_10S)
+                else -> it.copy(captureWithDelay = 0)
+            }
+        }
         viewModelScope.launch {
-            try {
-                val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                _effect.emit(Effect.CaptureImage(filePath))
-            } catch (exception: IllegalArgumentException) {
-                Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                _effect.emit(Effect.ShowMessage())
+            when (_state.value.delayTimer) {
+                TIMER_OFF -> {
+                    _state.update { it.copy(captureWithDelay = 0) }
+                    try {
+                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
+                        _effect.emit(Effect.CaptureImage(filePath))
+                    } catch (exception: IllegalArgumentException) {
+                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
+                        _effect.emit(Effect.ShowMessage())
+                    }
+                }
+                TIMER_3S -> {
+                    _state.update { it.copy(captureWithDelay = DELAY_3S) }
+                    delay(3000)
+                    try {
+                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
+                        _effect.emit(Effect.CaptureImage(filePath))
+                    } catch (exception: IllegalArgumentException) {
+                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
+                        _effect.emit(Effect.ShowMessage())
+                    }
+                }
+                TIMER_10S -> {
+                    delay(10000)
+                    try {
+                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
+                        _effect.emit(Effect.CaptureImage(filePath))
+                    } catch (exception: IllegalArgumentException) {
+                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
+                        _effect.emit(Effect.ShowMessage())
+                    }
+                }
             }
         }
     }
@@ -165,11 +200,13 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     data class State(
+        val captureWithDelay: Int = 0,
         val delayTimer: Int = TIMER_OFF,
         @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
         val latestImageUri: Uri? = null,
         val lens: Int? = null,
         val lensInfo: MutableMap<Int, CameraInfo> = mutableMapOf(),
+        val timeText: String? = null
     )
 
     sealed class Event {

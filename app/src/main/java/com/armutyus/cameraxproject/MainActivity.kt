@@ -9,9 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
@@ -23,6 +20,9 @@ import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Permissions
+import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -51,17 +51,17 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     NavHost(
                         navController = navController,
-                        startDestination = "gallery_screen"
+                        startDestination = GALLERY_ROUTE
                     ) {
-                        composable("gallery_screen") {
+                        composable(GALLERY_ROUTE) {
                             GalleryScreen(navController = navController)
                         }
-                        composable("photo_screen") {
+                        composable(PHOTO_ROUTE) {
                             PhotoScreen(navController = navController, factory = viewModelFactory) {
                                 showMessage(this@MainActivity, it)
                             }
                         }
-                        composable("settings_screen") {
+                        composable(SETTINGS_ROUTE) {
                             //SettingsScreen(navController = navController)
                         }
                     }
@@ -73,13 +73,4 @@ class MainActivity : ComponentActivity() {
 
 private fun showMessage(context: Context, message: String) {
     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun DefaultPreview() {
-    val context = LocalContext.current
-    CameraXProjectTheme {
-
-    }
 }

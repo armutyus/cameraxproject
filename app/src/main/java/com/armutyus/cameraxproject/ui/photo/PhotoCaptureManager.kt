@@ -3,10 +3,14 @@ package com.armutyus.cameraxproject.ui.photo
 import android.content.Context
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
+import androidx.annotation.RequiresApi
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -21,8 +25,11 @@ import com.armutyus.cameraxproject.util.PreviewState
 import com.armutyus.cameraxproject.util.Util
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
+import com.armutyus.cameraxproject.util.Util.Companion.UNKNOWN_ORIENTATION
 import com.armutyus.cameraxproject.util.aspectRatio
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -31,6 +38,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     private lateinit var imageCapture: ImageCapture
+    private lateinit var imageAnalyzer: ImageAnalysis
 
     var photoListener: PhotoListener = object : PhotoListener {
         override fun onInitialised(cameraLensInfo: HashMap<Int, CameraInfo>) {}
@@ -69,7 +77,32 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
 
     private fun getLifeCycleOwner() = builder.lifecycleOwner!!
 
-    private fun getConfiguration() = builder.context.resources.configuration
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun getView() = builder.context.display!!
+
+    /**
+     * Using an OrientationEventListener allows you to continuously update the target rotation
+     * of the camera use cases as the device’s orientation changes.
+     */
+    private val orientationEventListener by lazy {
+        object : OrientationEventListener(getContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == UNKNOWN_ORIENTATION) {
+                    return
+                }
+
+                val rotation = when (orientation) {
+                    in 45 until 135 -> Surface.ROTATION_270
+                    in 135 until 225 -> Surface.ROTATION_180
+                    in 225 until 315 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+
+                imageAnalyzer.targetRotation = rotation
+                imageCapture.targetRotation = rotation
+            }
+        }
+    }
 
     /**
      * Queries the capabilities of the FRONT and BACK camera lens
@@ -105,10 +138,16 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
      * Bind the selected camera and any use cases to the lifecycle.
      * Connect the Preview to the PreviewView.
      */
+    @RequiresApi(Build.VERSION_CODES.R)
     @Synchronized
     private fun showPreview(previewState: PreviewState, cameraPreview: PreviewView): View {
         getLifeCycleOwner().lifecycleScope.launchWhenResumed {
-            val cameraProvider = cameraProviderFuture.get()
+            val cameraProvider = withContext(Dispatchers.IO) {
+                cameraProviderFuture.get()
+            }
+
+            // Every time the orientation of device changes, update rotation for use cases
+            orientationEventListener.enable()
 
             // Get screen metrics used to setup camera for full screen resolution
             val metrics = Util.ScreenSizeCompat.getScreenSize(getContext())
@@ -116,7 +155,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
             val screenAspectRatio = aspectRatio(metrics.width, metrics.height)
             Log.d(TAG, "Preview aspect ratio: $screenAspectRatio")
 
-            val rotation = getConfiguration().orientation
+            val rotation = getView().rotation
 
             //Select a camera lens
             val cameraSelector: CameraSelector = CameraSelector.Builder()
@@ -137,21 +176,33 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                 .setFlashMode(previewState.flashMode)
                 .build()
 
+            //Create Image Analyzer use case
+            imageAnalyzer = ImageAnalysis.Builder()
+                // We request aspect ratio but no resolution
+                .setTargetAspectRatio(screenAspectRatio)
+                // Set initial target rotation, we will have to call this again if rotation changes
+                // during the lifecycle of this use case
+                .setTargetRotation(rotation)
+                .build()
+
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 getLifeCycleOwner(),
                 cameraSelector,
                 preview,
-                imageCapture
+                imageCapture,
+                imageAnalyzer
             )
         }
         return cameraPreview
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     fun showPreview(previewState: PreviewState): View {
         return showPreview(previewState, getCameraPreview())
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     fun updatePreview(previewState: PreviewState, previewView: View) {
         showPreview(previewState, previewView as PreviewView)
     }

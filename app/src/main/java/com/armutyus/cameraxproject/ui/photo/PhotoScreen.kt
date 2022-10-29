@@ -1,42 +1,40 @@
 package com.armutyus.cameraxproject.ui.photo
 
+import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.os.Build
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.util.*
-import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
-import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import java.io.File
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun PhotoScreen(
     navController: NavController,
@@ -49,6 +47,35 @@ fun PhotoScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
+    var rotation by remember {
+        mutableStateOf(0)
+    }
+
+    val orientationEventListener by lazy {
+        object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == Util.UNKNOWN_ORIENTATION) {
+                    return
+                }
+
+                rotation = when (orientation) {
+                    in 45 until 135 -> Surface.ROTATION_270
+                    in 135 until 225 -> Surface.ROTATION_180
+                    in 225 until 315 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+            }
+        }
+    }
+
+    DisposableEffect(key1 = "key1") {
+        orientationEventListener.enable()
+        onDispose {
+            orientationEventListener.disable()
+        }
+    }
+    
+    LockScreenOrientation(orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
     val listener = remember {
         object : PhotoCaptureManager.PhotoListener {
@@ -86,6 +113,14 @@ fun PhotoScreen(
         }
     }
 
+    val mediaDir = context.getExternalFilesDir("cameraXproject")?.let {
+        File(it, "Photos").apply { mkdirs() }
+    }
+
+    val latestCapturedPhoto = state.latestImageUri ?: mediaDir?.listFiles()?.firstOrNull {
+        it.lastModified() == mediaDir.lastModified()
+    }?.toUri()
+
     CompositionLocalProvider(LocalPhotoCaptureManager provides photoCaptureManager) {
         PhotoScreenContent(
             cameraLens = state.lens,
@@ -93,13 +128,15 @@ fun PhotoScreen(
             flashMode = state.flashMode,
             hasFlashUnit = state.lensInfo[state.lens]?.hasFlashUnit() ?: false,
             hasDualCamera = state.lensInfo.size > 1,
-            imageUri = state.latestImageUri,
+            imageUri = latestCapturedPhoto,
             view = view,
+            rotation = rotation,
             onEvent = photoViewModel::onEvent
         )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 private fun PhotoScreenContent(
     cameraLens: Int?,
@@ -109,6 +146,7 @@ private fun PhotoScreenContent(
     hasDualCamera: Boolean,
     imageUri: Uri?,
     view: View,
+    rotation: Int,
     onEvent: (PhotoViewModel.Event) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -119,25 +157,23 @@ private fun PhotoScreenContent(
             )
             Column(
                 modifier = Modifier.align(Alignment.TopCenter),
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TopControls(
                     showFlashIcon = hasFlashUnit,
                     delayTimer = delayTimer,
                     flashMode = flashMode,
+                    rotation = rotation,
                     onDelayTimerTapped = { onEvent(PhotoViewModel.Event.DelayTimerTapped) },
                     onFlashTapped = { onEvent(PhotoViewModel.Event.FlashTapped) },
                     onSettingsTapped = { onEvent(PhotoViewModel.Event.SettingsTapped) }
                 )
-                if (delayTimer == TIMER_3S) {
-                    DelayTimer(millisInFuture = delayTimer.toLong()) {
-                        onEvent(PhotoViewModel.Event.CaptureTapped)
-                    }
-                } else if (delayTimer == TIMER_10S) {
-                    DelayTimer(millisInFuture = delayTimer.toLong()) {
-                        onEvent(PhotoViewModel.Event.CaptureTapped)
-                    }
-                }
+                /*if (captureWithDelay == DELAY_3S) {
+                    DelayTimer(millisInFuture = captureWithDelay.toLong())
+                } else if (captureWithDelay == DELAY_10S) {
+                    DelayTimer(millisInFuture = captureWithDelay.toLong())
+                }*/
             }
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -150,6 +186,7 @@ private fun PhotoScreenContent(
                     onCaptureTapped = { onEvent(PhotoViewModel.Event.CaptureTapped) },
                     view = view,
                     imageUri = imageUri,
+                    rotation = rotation,
                     onFlipTapped = { onEvent(PhotoViewModel.Event.FlipTapped) },
                     onThumbnailTapped = { onEvent(PhotoViewModel.Event.ThumbnailTapped) }
                 )
@@ -163,6 +200,7 @@ internal fun TopControls(
     showFlashIcon: Boolean,
     delayTimer: Int,
     flashMode: Int,
+    rotation: Int,
     onDelayTimerTapped: () -> Unit,
     onFlashTapped: () -> Unit,
     onSettingsTapped: () -> Unit
@@ -181,14 +219,19 @@ internal fun TopControls(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CameraDelayIcon(delayTimer = delayTimer, onTapped = onDelayTimerTapped)
+            CameraDelayIcon(
+                delayTimer = delayTimer,
+                rotation = rotation,
+                onTapped = onDelayTimerTapped
+            )
             CameraFlashIcon(
                 showFlashIcon = showFlashIcon,
+                rotation = rotation,
                 flashMode = flashMode,
                 onTapped = onFlashTapped
             )
-            CameraEditIcon {}
-            SettingsIcon(onTapped = onSettingsTapped)
+            CameraEditIcon(rotation = rotation) {}
+            SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
         }
     }
 }
@@ -201,6 +244,7 @@ internal fun BottomControls(
     onCaptureTapped: () -> Unit,
     view: View,
     imageUri: Uri?,
+    rotation: Int,
     onFlipTapped: () -> Unit,
     onThumbnailTapped: () -> Unit
 ) {
@@ -230,6 +274,7 @@ internal fun BottomControls(
             showFlipIcon = showFlipIcon,
             view = view,
             imageUri = imageUri,
+            rotation = rotation,
             onCaptureTapped = onCaptureTapped,
             onFlipTapped = onFlipTapped,
             onThumbnailTapped = onThumbnailTapped
@@ -242,6 +287,7 @@ fun CameraControlsRow(
     showFlipIcon: Boolean,
     view: View,
     imageUri: Uri?,
+    rotation: Int,
     onCaptureTapped: () -> Unit,
     onFlipTapped: () -> Unit,
     onThumbnailTapped: () -> Unit
@@ -258,24 +304,10 @@ fun CameraControlsRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .border(width = 1.dp, color = Color.White, shape = CircleShape)
-                    .clickable { onThumbnailTapped() },
-                painter = rememberAsyncImagePainter(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(data = imageUri)
-                        .build(),
-                    filterQuality = FilterQuality.Medium
-                ),
-                contentDescription = stringResource(id = R.string.latest_image),
-                contentScale = ContentScale.Crop
-            )
+            CapturedImageThumbnailIcon(imageUri = imageUri, rotation = rotation, onTapped = onThumbnailTapped)
             CameraCaptureIcon(view = view, onTapped = onCaptureTapped)
             if (showFlipIcon) {
-                CameraFlipIcon(view = view, onTapped = onFlipTapped)
+                CameraFlipIcon(view = view, rotation = rotation, onTapped = onFlipTapped)
             }
         }
     }
@@ -309,7 +341,7 @@ fun CameraModesRow(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     color = if (text == selectedMode) {
-                        Color.Red
+                        MaterialTheme.colorScheme.primary
                     } else {
                         Color.White
                     }
@@ -319,6 +351,7 @@ fun CameraModesRow(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 private fun CameraPreview(
     lens: Int,
