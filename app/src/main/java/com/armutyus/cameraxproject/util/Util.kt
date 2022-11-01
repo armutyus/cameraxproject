@@ -22,11 +22,12 @@ class Util {
         const val CAPTURE_FAIL = "Image capture failed."
         const val GENERAL_ERROR_MESSAGE = "Something went wrong."
         const val PHOTO_MODE = 0
-        const val VIDEO_MODE = 1
+        const val VIDEO_MODE = 6
         const val UNKNOWN_ORIENTATION = -1
 
         const val GALLERY_ROUTE = "gallery_screen"
         const val PHOTO_ROUTE = "photo_screen"
+        const val PHOTO_PREVIEW_ROUTE = "photo_preview_screen"
         const val SETTINGS_ROUTE = "settings_screen"
         const val VIDEO_ROUTE = "video_screen"
 

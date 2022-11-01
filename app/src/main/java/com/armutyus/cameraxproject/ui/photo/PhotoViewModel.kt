@@ -5,26 +5,33 @@ import android.util.Log
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.extensions.ExtensionMode
+import androidx.camera.extensions.ExtensionsManager
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.armutyus.cameraxproject.models.State
+import com.armutyus.cameraxproject.models.Effect
+import com.armutyus.cameraxproject.models.Event
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
-import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_PREVIEW_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PhotoViewModel constructor(private val fileManager: FileManager) : ViewModel() {
-
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
 
@@ -33,6 +40,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     fun onEvent(event: Event) {
         when (event) {
+            Event.CameraModeTapped -> onCameraModeTapped()
             Event.CaptureTapped -> onCaptureTapped()
             Event.DelayTimerTapped -> onDelayTimerTapped()
             Event.FlashTapped -> onFlashTapped()
@@ -42,10 +50,15 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             Event.ThumbnailTapped -> onThumbnailTapped()
             Event.VideoModeTapped -> onVideoModeTapped()
 
-            is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo)
+            is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo, event.availableExtensions)
             is Event.Error -> onError()
             is Event.ImageCaptured -> onImageCaptured(event.imageResult.savedUri)
+            is Event.SelectCameraExtension -> {}
         }
+    }
+
+    private fun onCameraModeTapped() {
+
     }
 
     private fun onCaptureTapped() {
@@ -135,25 +148,25 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     private fun onPhotoModeTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo("photo_screen"))
+            _effect.emit(Effect.NavigateTo(PHOTO_ROUTE))
         }
     }
 
     private fun onSettingsTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo("settings_screen"))
+            _effect.emit(Effect.NavigateTo(SETTINGS_ROUTE))
         }
     }
 
     private fun onThumbnailTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo("photo_preview_screen"))
+            _effect.emit(Effect.NavigateTo(PHOTO_PREVIEW_ROUTE))
         }
     }
 
     private fun onVideoModeTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo("video_screen"))
+            _effect.emit(Effect.NavigateTo(VIDEO_ROUTE))
         }
     }
 
@@ -181,7 +194,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>) {
+    private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>, availableExtensions: List<Int>) {
+        val currentState = _state.value
         if (cameraLensInfo.isNotEmpty()) {
             val defaultLens = if (cameraLensInfo[CameraSelector.LENS_FACING_BACK] != null) {
                 CameraSelector.LENS_FACING_BACK
@@ -197,36 +211,20 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 )
             }
         }
-    }
 
-    data class State(
-        val captureWithDelay: Int = 0,
-        val delayTimer: Int = TIMER_OFF,
-        @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
-        val latestImageUri: Uri? = null,
-        val lens: Int? = null,
-        val lensInfo: MutableMap<Int, CameraInfo> = mutableMapOf(),
-        val timeText: String? = null
-    )
-
-    sealed class Event {
-        data class CameraInitialized(val cameraLensInfo: HashMap<Int, CameraInfo>) : Event()
-        data class ImageCaptured(val imageResult: ImageCapture.OutputFileResults) : Event()
-        data class Error(val exception: Exception) : Event()
-
-        object CaptureTapped : Event()
-        object DelayTimerTapped : Event()
-        object FlashTapped : Event()
-        object FlipTapped : Event()
-        object PhotoModeTapped : Event()
-        object SettingsTapped : Event()
-        object ThumbnailTapped : Event()
-        object VideoModeTapped : Event()
-    }
-
-    sealed class Effect {
-        data class ShowMessage(val message: String = GENERAL_ERROR_MESSAGE) : Effect()
-        data class CaptureImage(val filePath: String) : Effect()
-        data class NavigateTo(val route: String) : Effect()
+        if (availableExtensions.isEmpty()) {
+            _state.update {
+                it.copy(
+                    extensionMode = ExtensionMode.NONE
+                )
+            }
+        } else {
+            _state.update {
+                it.copy(
+                    availableExtensions = availableExtensions,
+                    extensionMode = currentState.extensionMode
+                )
+            }
+        }
     }
 }

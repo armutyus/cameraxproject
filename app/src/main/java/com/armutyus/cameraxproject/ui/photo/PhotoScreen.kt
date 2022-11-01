@@ -10,9 +10,14 @@ import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.extensions.ExtensionMode
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,7 +37,13 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.models.CameraModesItem
+import com.armutyus.cameraxproject.models.Effect
+import com.armutyus.cameraxproject.models.Event
+import com.armutyus.cameraxproject.models.PreviewState
 import com.armutyus.cameraxproject.util.*
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.R)
@@ -79,16 +91,19 @@ fun PhotoScreen(
 
     val listener = remember {
         object : PhotoCaptureManager.PhotoListener {
-            override fun onInitialised(cameraLensInfo: HashMap<Int, CameraInfo>) {
-                photoViewModel.onEvent(PhotoViewModel.Event.CameraInitialized(cameraLensInfo))
+            override fun onInitialised(
+                cameraLensInfo: HashMap<Int, CameraInfo>,
+                availableExtensions: List<Int>
+            ) {
+                photoViewModel.onEvent(Event.CameraInitialized(cameraLensInfo, availableExtensions))
             }
 
             override fun onSuccess(imageResult: ImageCapture.OutputFileResults) {
-                photoViewModel.onEvent(PhotoViewModel.Event.ImageCaptured(imageResult))
+                photoViewModel.onEvent(Event.ImageCaptured(imageResult))
             }
 
             override fun onError(exception: Exception) {
-                photoViewModel.onEvent(PhotoViewModel.Event.Error(exception))
+                photoViewModel.onEvent(Event.Error(exception))
             }
         }
     }
@@ -103,12 +118,12 @@ fun PhotoScreen(
     LaunchedEffect(photoViewModel) {
         photoViewModel.effect.collect {
             when (it) {
-                is PhotoViewModel.Effect.NavigateTo -> navController.navigate(it.route)
-                is PhotoViewModel.Effect.CaptureImage -> photoCaptureManager.takePhoto(
+                is Effect.NavigateTo -> navController.navigate(it.route)
+                is Effect.CaptureImage -> photoCaptureManager.takePhoto(
                     it.filePath, state.lens
                         ?: CameraSelector.LENS_FACING_BACK
                 )
-                is PhotoViewModel.Effect.ShowMessage -> onShowMessage(it.message)
+                is Effect.ShowMessage -> onShowMessage(it.message)
             }
         }
     }
@@ -126,6 +141,8 @@ fun PhotoScreen(
             cameraLens = state.lens,
             delayTimer = state.delayTimer,
             flashMode = state.flashMode,
+            availableExtensions = state.availableExtensions,
+            extensionMode = state.extensionMode,
             hasFlashUnit = state.lensInfo[state.lens]?.hasFlashUnit() ?: false,
             hasDualCamera = state.lensInfo.size > 1,
             imageUri = latestCapturedPhoto,
@@ -142,12 +159,14 @@ private fun PhotoScreenContent(
     cameraLens: Int?,
     delayTimer: Int,
     @ImageCapture.FlashMode flashMode: Int,
+    availableExtensions: List<Int>,
+    @ExtensionMode.Mode extensionMode: Int,
     hasFlashUnit: Boolean,
     hasDualCamera: Boolean,
     imageUri: Uri?,
     view: View,
     rotation: Int,
-    onEvent: (PhotoViewModel.Event) -> Unit
+    onEvent: (Event) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         cameraLens?.let {
@@ -165,9 +184,9 @@ private fun PhotoScreenContent(
                     delayTimer = delayTimer,
                     flashMode = flashMode,
                     rotation = rotation,
-                    onDelayTimerTapped = { onEvent(PhotoViewModel.Event.DelayTimerTapped) },
-                    onFlashTapped = { onEvent(PhotoViewModel.Event.FlashTapped) },
-                    onSettingsTapped = { onEvent(PhotoViewModel.Event.SettingsTapped) }
+                    onDelayTimerTapped = { onEvent(Event.DelayTimerTapped) },
+                    onFlashTapped = { onEvent(Event.FlashTapped) },
+                    onSettingsTapped = { onEvent(Event.SettingsTapped) }
                 )
                 /*if (captureWithDelay == DELAY_3S) {
                     DelayTimer(millisInFuture = captureWithDelay.toLong())
@@ -180,16 +199,16 @@ private fun PhotoScreenContent(
                 verticalArrangement = Arrangement.Bottom
             ) {
                 BottomControls(
+                    availableExtensions = availableExtensions,
+                    extensionMode = extensionMode,
                     showFlipIcon = hasDualCamera,
-                    onPhotoModeTapped = { onEvent(PhotoViewModel.Event.PhotoModeTapped) },
-                    onVideoModeTapped = { onEvent(PhotoViewModel.Event.VideoModeTapped) },
-                    onCaptureTapped = { onEvent(PhotoViewModel.Event.CaptureTapped) },
+                    onCaptureTapped = { onEvent(Event.CaptureTapped) },
                     view = view,
                     imageUri = imageUri,
                     rotation = rotation,
-                    onFlipTapped = { onEvent(PhotoViewModel.Event.FlipTapped) },
-                    onThumbnailTapped = { onEvent(PhotoViewModel.Event.ThumbnailTapped) }
-                )
+                    onFlipTapped = { onEvent(Event.FlipTapped) },
+                    onCameraModeTapped = {}
+                ) { onEvent(Event.ThumbnailTapped) }
             }
         }
     }
@@ -238,9 +257,10 @@ internal fun TopControls(
 
 @Composable
 internal fun BottomControls(
+    availableExtensions: List<Int>,
+    extensionMode: Int,
     showFlipIcon: Boolean,
-    onPhotoModeTapped: () -> Unit,
-    onVideoModeTapped: () -> Unit,
+    onCameraModeTapped: () -> Unit,
     onCaptureTapped: () -> Unit,
     view: View,
     imageUri: Uri?,
@@ -248,28 +268,41 @@ internal fun BottomControls(
     onFlipTapped: () -> Unit,
     onThumbnailTapped: () -> Unit
 ) {
-    val cameraModes = listOf(
-        "Photo",
-        "Video"
+    val cameraModes = mapOf(
+        ExtensionMode.AUTO to R.string.camera_mode_auto,
+        ExtensionMode.NIGHT to R.string.camera_mode_night,
+        ExtensionMode.HDR to R.string.camera_mode_hdr,
+        ExtensionMode.FACE_RETOUCH to R.string.camera_mode_face_retouch,
+        ExtensionMode.BOKEH to R.string.camera_mode_bokeh,
+        ExtensionMode.NONE to R.string.camera_mode_none,
+        VIDEO_MODE to R.string.camera_mode_video
     )
-    var selectedMode by remember {
-        mutableStateOf("Photo")
-    }
-    val onSelectionChange = { text: String ->
-        selectedMode = text
+
+    val cameraModesList = availableExtensions.map {
+        CameraModesItem(
+            it,
+            stringResource(id = cameraModes[it]!!),
+            extensionMode == it
+        )
     }
 
+    val scrollState = rememberScrollState()
+
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .verticalScroll(scrollState)
+            .fillMaxWidth(),
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        CameraModesRow(
-            cameraModes = cameraModes,
-            onCameraModeTapped = if (selectedMode == "Photo") onPhotoModeTapped else onVideoModeTapped,
-            onSelectionChange = onSelectionChange,
-            selectedMode = selectedMode
-        )
+        LazyRow(contentPadding = PaddingValues(16.dp)) {
+            items(cameraModesList) { cameraModes ->
+                CameraModesRow(cameraModesItem = cameraModes) {
+                    onCameraModeTapped()
+                }
+            }
+        }
+
         CameraControlsRow(
             showFlipIcon = showFlipIcon,
             view = view,
@@ -315,39 +348,26 @@ fun CameraControlsRow(
 
 @Composable
 fun CameraModesRow(
-    cameraModes: List<String>,
-    onCameraModeTapped: () -> Unit,
-    onSelectionChange: (String) -> Unit,
-    selectedMode: String
+    cameraModesItem: CameraModesItem,
+    onCameraModeTapped: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        cameraModes.forEach { text ->
-            TextButton(
-                onClick = {
-                    if (text != selectedMode) {
-                        onSelectionChange(text)
-                        onCameraModeTapped()
-                    }
-                }
-            ) {
-                Text(
-                    text = text,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    color = if (text == selectedMode) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        Color.White
-                    }
-                )
+    TextButton(
+        onClick = {
+            if (!cameraModesItem.selected) {
+                onCameraModeTapped()
             }
         }
+    ) {
+        Text(
+            text = cameraModesItem.name,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = if (cameraModesItem.selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.White
+            }
+        )
     }
 }
 
@@ -364,8 +384,8 @@ private fun CameraPreview(
             factory = {
                 captureManager.showPreview(
                     PreviewState(
-                        cameraLens = lens,
-                        flashMode = flashMode
+                        flashMode = flashMode,
+                        cameraLens = lens
                     )
                 )
             },
@@ -373,8 +393,8 @@ private fun CameraPreview(
             update = {
                 captureManager.updatePreview(
                     PreviewState(
-                        cameraLens = lens,
-                        flashMode = flashMode
+                        flashMode = flashMode,
+                        cameraLens = lens
                     ), it
                 )
             }

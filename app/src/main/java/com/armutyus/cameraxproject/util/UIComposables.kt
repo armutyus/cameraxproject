@@ -1,5 +1,7 @@
 package com.armutyus.cameraxproject.util
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.net.Uri
 import android.os.CountDownTimer
 import android.text.format.DateUtils
@@ -12,6 +14,7 @@ import androidx.camera.core.TorchState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
