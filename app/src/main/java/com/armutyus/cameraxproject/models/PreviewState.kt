@@ -6,6 +6,7 @@ import androidx.camera.core.TorchState
 import androidx.camera.extensions.ExtensionMode
 
 data class PreviewState(
+    val cameraState: CameraState = CameraState.NOT_READY,
     @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
     @TorchState.State val torchState: Int = TorchState.OFF,
     @ExtensionMode.Mode val extensionMode: Int = ExtensionMode.NONE,

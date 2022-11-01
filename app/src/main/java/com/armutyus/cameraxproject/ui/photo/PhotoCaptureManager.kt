@@ -40,7 +40,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     LifecycleEventObserver {
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
-    private lateinit var extensionsManager: ExtensionsManager
+    private lateinit var extensionsManagerFuture: ListenableFuture<ExtensionsManager>
     private lateinit var imageCapture: ImageCapture
     private lateinit var imageAnalyzer: ImageAnalysis
 
@@ -61,9 +61,10 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
                 cameraProviderFuture = ProcessCameraProvider.getInstance(getContext())
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    extensionsManager = ExtensionsManager.getInstanceAsync(getContext(), cameraProvider).get()
+                val cameraProvider = cameraProviderFuture.get()
+                extensionsManagerFuture = ExtensionsManager.getInstanceAsync(getContext(), cameraProvider)
+                extensionsManagerFuture.addListener({
+                    val extensionsManager = extensionsManagerFuture.get()
                     queryCameraInfo(source, cameraProvider, extensionsManager)
                 }, ContextCompat.getMainExecutor(getContext()))
             }
@@ -165,6 +166,9 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
         getLifeCycleOwner().lifecycleScope.launchWhenResumed {
             val cameraProvider = withContext(Dispatchers.IO) {
                 cameraProviderFuture.get()
+            }
+            val extensionsManager = withContext(Dispatchers.IO) {
+                extensionsManagerFuture.get()
             }
 
             // Every time the orientation of device changes, update rotation for use cases

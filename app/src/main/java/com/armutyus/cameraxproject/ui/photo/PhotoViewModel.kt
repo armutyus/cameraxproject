@@ -6,10 +6,10 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
-import androidx.camera.extensions.ExtensionsManager
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.armutyus.cameraxproject.models.CameraState
 import com.armutyus.cameraxproject.models.State
 import com.armutyus.cameraxproject.models.Effect
 import com.armutyus.cameraxproject.models.Event
@@ -26,6 +26,7 @@ import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -40,7 +41,6 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     fun onEvent(event: Event) {
         when (event) {
-            Event.CameraModeTapped -> onCameraModeTapped()
             Event.CaptureTapped -> onCaptureTapped()
             Event.DelayTimerTapped -> onDelayTimerTapped()
             Event.FlashTapped -> onFlashTapped()
@@ -53,12 +53,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo, event.availableExtensions)
             is Event.Error -> onError()
             is Event.ImageCaptured -> onImageCaptured(event.imageResult.savedUri)
-            is Event.SelectCameraExtension -> {}
+            is Event.SelectCameraExtension -> setExtensionMode(event.extension)
         }
-    }
-
-    private fun onCameraModeTapped() {
-
     }
 
     private fun onCaptureTapped() {
@@ -146,6 +142,21 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
+    private fun setExtensionMode(@ExtensionMode.Mode extension: Int) {
+        if (extension == VIDEO_MODE) {
+            viewModelScope.launch {
+                _effect.emit(Effect.NavigateTo(VIDEO_ROUTE))
+            }
+        } else {
+            _state.update {
+                it.copy(
+                    cameraState = CameraState.NOT_READY,
+                    extensionMode = extension
+                )
+            }
+        }
+    }
+
     private fun onPhotoModeTapped() {
         viewModelScope.launch {
             _effect.emit(Effect.NavigateTo(PHOTO_ROUTE))
@@ -221,6 +232,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         } else {
             _state.update {
                 it.copy(
+                    cameraState = CameraState.READY,
                     availableExtensions = availableExtensions,
                     extensionMode = currentState.extensionMode
                 )

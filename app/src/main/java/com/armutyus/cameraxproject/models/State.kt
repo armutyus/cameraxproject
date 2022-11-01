@@ -2,7 +2,6 @@ package com.armutyus.cameraxproject.models
 
 import android.net.Uri
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
 import com.armutyus.cameraxproject.util.Util

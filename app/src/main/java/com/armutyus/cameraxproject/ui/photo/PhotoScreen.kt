@@ -38,10 +38,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
-import com.armutyus.cameraxproject.models.CameraModesItem
-import com.armutyus.cameraxproject.models.Effect
-import com.armutyus.cameraxproject.models.Event
-import com.armutyus.cameraxproject.models.PreviewState
+import com.armutyus.cameraxproject.models.*
 import com.armutyus.cameraxproject.util.*
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
@@ -139,6 +136,7 @@ fun PhotoScreen(
     CompositionLocalProvider(LocalPhotoCaptureManager provides photoCaptureManager) {
         PhotoScreenContent(
             cameraLens = state.lens,
+            cameraState = state.cameraState,
             delayTimer = state.delayTimer,
             flashMode = state.flashMode,
             availableExtensions = state.availableExtensions,
@@ -157,6 +155,7 @@ fun PhotoScreen(
 @Composable
 private fun PhotoScreenContent(
     cameraLens: Int?,
+    cameraState: CameraState,
     delayTimer: Int,
     @ImageCapture.FlashMode flashMode: Int,
     availableExtensions: List<Int>,
@@ -171,7 +170,9 @@ private fun PhotoScreenContent(
     Box(modifier = Modifier.fillMaxSize()) {
         cameraLens?.let {
             CameraPreview(
+                cameraState = cameraState,
                 lens = it,
+                extensionMode = extensionMode,
                 flashMode = flashMode
             )
             Column(
@@ -207,7 +208,7 @@ private fun PhotoScreenContent(
                     imageUri = imageUri,
                     rotation = rotation,
                     onFlipTapped = { onEvent(Event.FlipTapped) },
-                    onCameraModeTapped = {}
+                    onCameraModeTapped = { extension -> onEvent(Event.SelectCameraExtension(extension))}
                 ) { onEvent(Event.ThumbnailTapped) }
             }
         }
@@ -260,7 +261,7 @@ internal fun BottomControls(
     availableExtensions: List<Int>,
     extensionMode: Int,
     showFlipIcon: Boolean,
-    onCameraModeTapped: () -> Unit,
+    onCameraModeTapped: (Int) -> Unit,
     onCaptureTapped: () -> Unit,
     view: View,
     imageUri: Uri?,
@@ -296,9 +297,9 @@ internal fun BottomControls(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         LazyRow(contentPadding = PaddingValues(16.dp)) {
-            items(cameraModesList) { cameraModes ->
-                CameraModesRow(cameraModesItem = cameraModes) {
-                    onCameraModeTapped()
+            items(cameraModesList) { cameraMode ->
+                CameraModesRow(cameraModesItem = cameraMode) {
+                    onCameraModeTapped(it)
                 }
             }
         }
@@ -349,12 +350,12 @@ fun CameraControlsRow(
 @Composable
 fun CameraModesRow(
     cameraModesItem: CameraModesItem,
-    onCameraModeTapped: () -> Unit
+    onCameraModeTapped: (Int) -> Unit
 ) {
     TextButton(
         onClick = {
             if (!cameraModesItem.selected) {
-                onCameraModeTapped()
+                onCameraModeTapped(cameraModesItem.cameraMode)
             }
         }
     ) {
@@ -374,7 +375,9 @@ fun CameraModesRow(
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
 private fun CameraPreview(
+    cameraState: CameraState,
     lens: Int,
+    @ExtensionMode.Mode extensionMode: Int,
     @ImageCapture.FlashMode flashMode: Int
 ) {
     val captureManager = LocalPhotoCaptureManager.current
@@ -384,7 +387,9 @@ private fun CameraPreview(
             factory = {
                 captureManager.showPreview(
                     PreviewState(
+                        cameraState = cameraState,
                         flashMode = flashMode,
+                        extensionMode = extensionMode,
                         cameraLens = lens
                     )
                 )
@@ -393,6 +398,7 @@ private fun CameraPreview(
             update = {
                 captureManager.updatePreview(
                     PreviewState(
+                        cameraState = cameraState,
                         flashMode = flashMode,
                         cameraLens = lens
                     ), it

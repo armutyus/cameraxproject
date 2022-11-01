@@ -10,7 +10,6 @@ sealed class Event {
     data class Error(val exception: Exception) : Event()
     data class SelectCameraExtension(@ExtensionMode.Mode val extension: Int) : Event()
 
-    object CameraModeTapped : Event()
     object CaptureTapped : Event()
     object DelayTimerTapped : Event()
     object FlashTapped : Event()
