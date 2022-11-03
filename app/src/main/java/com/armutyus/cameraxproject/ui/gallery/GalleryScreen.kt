@@ -29,7 +29,8 @@ fun GalleryScreen(navController: NavController) {
     val context = LocalContext.current
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = {
+            FloatingActionButton(
+                onClick = {
                 navController.navigate(PHOTO_ROUTE) {
                     // Pop up to the start destination of the graph to
                     // avoid building up a large stack of destinations

@@ -9,10 +9,10 @@ import androidx.camera.extensions.ExtensionMode
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.armutyus.cameraxproject.models.CameraState
-import com.armutyus.cameraxproject.models.Effect
-import com.armutyus.cameraxproject.models.Event
-import com.armutyus.cameraxproject.models.State
+import com.armutyus.cameraxproject.ui.photo.models.CameraState
+import com.armutyus.cameraxproject.ui.photo.models.PhotoEffect
+import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
+import com.armutyus.cameraxproject.ui.photo.models.PhotoState
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
@@ -33,34 +33,34 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PhotoViewModel constructor(private val fileManager: FileManager) : ViewModel() {
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state
+    private val _photoState = MutableStateFlow(PhotoState())
+    val photoState: StateFlow<PhotoState> = _photoState
 
-    private val _effect = MutableSharedFlow<Effect>()
-    val effect: SharedFlow<Effect> = _effect
+    private val _photoEffect = MutableSharedFlow<PhotoEffect>()
+    val photoEffect: SharedFlow<PhotoEffect> = _photoEffect
 
-    fun onEvent(event: Event) {
-        when (event) {
-            Event.CaptureTapped -> onCaptureTapped()
-            Event.DelayTimerTapped -> onDelayTimerTapped()
-            Event.FlashTapped -> onFlashTapped()
-            Event.FlipTapped -> onFlipTapped()
-            Event.PhotoModeTapped -> onPhotoModeTapped()
-            Event.SettingsTapped -> onSettingsTapped()
-            Event.ThumbnailTapped -> onThumbnailTapped()
-            Event.VideoModeTapped -> onVideoModeTapped()
+    fun onEvent(photoEvent: PhotoEvent) {
+        when (photoEvent) {
+            PhotoEvent.CaptureTapped -> onCaptureTapped()
+            PhotoEvent.DelayTimerTapped -> onDelayTimerTapped()
+            PhotoEvent.FlashTapped -> onFlashTapped()
+            PhotoEvent.FlipTapped -> onFlipTapped()
+            PhotoEvent.PhotoModeTapped -> onPhotoModeTapped()
+            PhotoEvent.SettingsTapped -> onSettingsTapped()
+            PhotoEvent.ThumbnailTapped -> onThumbnailTapped()
+            PhotoEvent.VideoModeTapped -> onVideoModeTapped()
 
-            is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo)
-            is Event.ExtensionModeChanged -> onExtensionModeChanged(event.availableExtensions)
-            is Event.Error -> onError()
-            is Event.ImageCaptured -> onImageCaptured(event.imageResult.savedUri)
-            is Event.SelectCameraExtension -> setExtensionMode(event.extension)
+            is PhotoEvent.CameraInitialized -> onCameraInitialized(photoEvent.cameraLensInfo)
+            is PhotoEvent.ExtensionModeChanged -> onExtensionModeChanged(photoEvent.availableExtensions)
+            is PhotoEvent.Error -> onError()
+            is PhotoEvent.ImageCaptured -> onImageCaptured(photoEvent.imageResult.savedUri)
+            is PhotoEvent.SelectCameraExtension -> setExtensionMode(photoEvent.extension)
         }
     }
 
     private fun onCaptureTapped() {
-        _state.update {
-            when (_state.value.delayTimer) {
+        _photoState.update {
+            when (_photoState.value.delayTimer) {
                 TIMER_OFF -> it.copy(captureWithDelay = 0)
                 TIMER_3S -> it.copy(captureWithDelay = DELAY_3S)
                 TIMER_10S -> it.copy(captureWithDelay = DELAY_10S)
@@ -68,36 +68,36 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             }
         }
         viewModelScope.launch {
-            when (_state.value.delayTimer) {
+            when (_photoState.value.delayTimer) {
                 TIMER_OFF -> {
-                    _state.update { it.copy(captureWithDelay = 0) }
+                    _photoState.update { it.copy(captureWithDelay = 0) }
                     try {
                         val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _effect.emit(Effect.CaptureImage(filePath))
+                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
                     } catch (exception: IllegalArgumentException) {
                         Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _effect.emit(Effect.ShowMessage())
+                        _photoEffect.emit(PhotoEffect.ShowMessage())
                     }
                 }
                 TIMER_3S -> {
-                    _state.update { it.copy(captureWithDelay = DELAY_3S) }
+                    _photoState.update { it.copy(captureWithDelay = DELAY_3S) }
                     delay(3000)
                     try {
                         val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _effect.emit(Effect.CaptureImage(filePath))
+                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
                     } catch (exception: IllegalArgumentException) {
                         Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _effect.emit(Effect.ShowMessage())
+                        _photoEffect.emit(PhotoEffect.ShowMessage())
                     }
                 }
                 TIMER_10S -> {
                     delay(10000)
                     try {
                         val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _effect.emit(Effect.CaptureImage(filePath))
+                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
                     } catch (exception: IllegalArgumentException) {
                         Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _effect.emit(Effect.ShowMessage())
+                        _photoEffect.emit(PhotoEffect.ShowMessage())
                     }
                 }
             }
@@ -105,8 +105,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onDelayTimerTapped() {
-        _state.update {
-            when (_state.value.delayTimer) {
+        _photoState.update {
+            when (_photoState.value.delayTimer) {
                 TIMER_OFF -> it.copy(delayTimer = TIMER_3S)
                 TIMER_3S -> it.copy(delayTimer = TIMER_10S)
                 TIMER_10S -> it.copy(delayTimer = TIMER_OFF)
@@ -116,8 +116,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onFlashTapped() {
-        _state.update {
-            when (_state.value.flashMode) {
+        _photoState.update {
+            when (_photoState.value.flashMode) {
                 ImageCapture.FLASH_MODE_OFF -> it.copy(flashMode = ImageCapture.FLASH_MODE_AUTO)
                 ImageCapture.FLASH_MODE_AUTO -> it.copy(flashMode = ImageCapture.FLASH_MODE_ON)
                 ImageCapture.FLASH_MODE_ON -> it.copy(flashMode = ImageCapture.FLASH_MODE_OFF)
@@ -127,29 +127,29 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onFlipTapped() {
-        val lens = if (_state.value.lens == CameraSelector.LENS_FACING_FRONT) {
+        val lens = if (_photoState.value.lens == CameraSelector.LENS_FACING_FRONT) {
             CameraSelector.LENS_FACING_BACK
         } else {
             CameraSelector.LENS_FACING_FRONT
         }
         //Check if the lens has flash unit
-        val flashMode = if (_state.value.lensInfo[lens]?.hasFlashUnit() == true) {
-            _state.value.flashMode
+        val flashMode = if (_photoState.value.lensInfo[lens]?.hasFlashUnit() == true) {
+            _photoState.value.flashMode
         } else {
             ImageCapture.FLASH_MODE_OFF
         }
-        if (_state.value.lensInfo[lens] != null) {
-            _state.getAndUpdate { it.copy(lens = lens, flashMode = flashMode) }
+        if (_photoState.value.lensInfo[lens] != null) {
+            _photoState.getAndUpdate { it.copy(lens = lens, flashMode = flashMode) }
         }
     }
 
     private fun setExtensionMode(@ExtensionMode.Mode extension: Int) {
         if (extension == VIDEO_MODE) {
             viewModelScope.launch {
-                _effect.emit(Effect.NavigateTo(VIDEO_ROUTE))
+                _photoEffect.emit(PhotoEffect.NavigateTo(VIDEO_ROUTE))
             }
         } else {
-            _state.update {
+            _photoState.update {
                 it.copy(
                     cameraState = CameraState.NOT_READY,
                     extensionMode = extension
@@ -160,31 +160,31 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     private fun onPhotoModeTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo(PHOTO_ROUTE))
+            _photoEffect.emit(PhotoEffect.NavigateTo(PHOTO_ROUTE))
         }
     }
 
     private fun onSettingsTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo(SETTINGS_ROUTE))
+            _photoEffect.emit(PhotoEffect.NavigateTo(SETTINGS_ROUTE))
         }
     }
 
     private fun onThumbnailTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo(PHOTO_PREVIEW_ROUTE))
+            _photoEffect.emit(PhotoEffect.NavigateTo(PHOTO_PREVIEW_ROUTE))
         }
     }
 
     private fun onVideoModeTapped() {
         viewModelScope.launch {
-            _effect.emit(Effect.NavigateTo(VIDEO_ROUTE))
+            _photoEffect.emit(PhotoEffect.NavigateTo(VIDEO_ROUTE))
         }
     }
 
     private fun onImageCaptured(uri: Uri?) {
         if (uri != null && uri.path != null) {
-            _state.update {
+            _photoState.update {
                 it.copy(
                     latestImageUri = uri
                 )
@@ -192,7 +192,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         } else {
             val mediaDir = fileManager.getPrivateFileDirectory(PHOTO_DIR)
             val latestImageUri = mediaDir?.listFiles()?.lastOrNull()?.toUri() ?: Uri.EMPTY
-            _state.update {
+            _photoState.update {
                 it.copy(
                     latestImageUri = latestImageUri
                 )
@@ -202,7 +202,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     private fun onError() {
         viewModelScope.launch {
-            _effect.emit(Effect.ShowMessage())
+            _photoEffect.emit(PhotoEffect.ShowMessage())
         }
     }
 
@@ -215,7 +215,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             } else {
                 null
             }
-            _state.update {
+            _photoState.update {
                 it.copy(
                     lens = it.lens ?: defaultLens,
                     lensInfo = cameraLensInfo
@@ -225,15 +225,15 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onExtensionModeChanged(availableExtensions: List<Int>) {
-        val currentState = _state.value
+        val currentState = _photoState.value
         if (availableExtensions.isEmpty()) {
-            _state.update {
+            _photoState.update {
                 it.copy(
                     extensionMode = ExtensionMode.NONE
                 )
             }
         } else {
-            _state.update {
+            _photoState.update {
                 it.copy(
                     cameraState = CameraState.READY,
                     availableExtensions = availableExtensions,

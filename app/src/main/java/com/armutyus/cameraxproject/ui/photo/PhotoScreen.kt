@@ -38,7 +38,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
-import com.armutyus.cameraxproject.models.*
+import com.armutyus.cameraxproject.ui.photo.models.*
 import com.armutyus.cameraxproject.util.*
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
@@ -51,7 +51,7 @@ fun PhotoScreen(
     photoViewModel: PhotoViewModel = viewModel(factory = factory),
     onShowMessage: (message: String) -> Unit
 ) {
-    val state by photoViewModel.state.collectAsState()
+    val state by photoViewModel.photoState.collectAsState()
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -91,19 +91,19 @@ fun PhotoScreen(
             override fun onInitialised(
                 cameraLensInfo: HashMap<Int, CameraInfo>
             ) {
-                photoViewModel.onEvent(Event.CameraInitialized(cameraLensInfo))
+                photoViewModel.onEvent(PhotoEvent.CameraInitialized(cameraLensInfo))
             }
 
             override fun onExtensionModeChanged(availableExtensions: List<Int>) {
-                photoViewModel.onEvent(Event.ExtensionModeChanged(availableExtensions))
+                photoViewModel.onEvent(PhotoEvent.ExtensionModeChanged(availableExtensions))
             }
 
             override fun onSuccess(imageResult: ImageCapture.OutputFileResults) {
-                photoViewModel.onEvent(Event.ImageCaptured(imageResult))
+                photoViewModel.onEvent(PhotoEvent.ImageCaptured(imageResult))
             }
 
             override fun onError(exception: Exception) {
-                photoViewModel.onEvent(Event.Error(exception))
+                photoViewModel.onEvent(PhotoEvent.Error(exception))
             }
         }
     }
@@ -116,14 +116,22 @@ fun PhotoScreen(
     }
 
     LaunchedEffect(photoViewModel) {
-        photoViewModel.effect.collect {
+        photoViewModel.photoEffect.collect {
             when (it) {
-                is Effect.NavigateTo -> navController.navigate(it.route)
-                is Effect.CaptureImage -> photoCaptureManager.takePhoto(
+                is PhotoEffect.NavigateTo -> {
+                    navController.navigate(it.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+                is PhotoEffect.CaptureImage -> photoCaptureManager.takePhoto(
                     it.filePath, state.lens
                         ?: CameraSelector.LENS_FACING_BACK
                 )
-                is Effect.ShowMessage -> onShowMessage(it.message)
+                is PhotoEffect.ShowMessage -> onShowMessage(it.message)
             }
         }
     }
@@ -168,7 +176,7 @@ private fun PhotoScreenContent(
     imageUri: Uri?,
     view: View,
     rotation: Int,
-    onEvent: (Event) -> Unit
+    onEvent: (PhotoEvent) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         cameraLens?.let {
@@ -188,9 +196,9 @@ private fun PhotoScreenContent(
                     delayTimer = delayTimer,
                     flashMode = flashMode,
                     rotation = rotation,
-                    onDelayTimerTapped = { onEvent(Event.DelayTimerTapped) },
-                    onFlashTapped = { onEvent(Event.FlashTapped) },
-                    onSettingsTapped = { onEvent(Event.SettingsTapped) }
+                    onDelayTimerTapped = { onEvent(PhotoEvent.DelayTimerTapped) },
+                    onFlashTapped = { onEvent(PhotoEvent.FlashTapped) },
+                    onSettingsTapped = { onEvent(PhotoEvent.SettingsTapped) }
                 )
                 /*if (captureWithDelay == DELAY_3S) {
                     DelayTimer(millisInFuture = captureWithDelay.toLong())
@@ -206,19 +214,19 @@ private fun PhotoScreenContent(
                     availableExtensions = availableExtensions,
                     extensionMode = extensionMode,
                     showFlipIcon = hasDualCamera,
-                    onCaptureTapped = { onEvent(Event.CaptureTapped) },
+                    onCaptureTapped = { onEvent(PhotoEvent.CaptureTapped) },
                     view = view,
                     imageUri = imageUri,
                     rotation = rotation,
-                    onFlipTapped = { onEvent(Event.FlipTapped) },
+                    onFlipTapped = { onEvent(PhotoEvent.FlipTapped) },
                     onCameraModeTapped = { extension ->
                         onEvent(
-                            Event.SelectCameraExtension(
+                            PhotoEvent.SelectCameraExtension(
                                 extension
                             )
                         )
                     }
-                ) { onEvent(Event.ThumbnailTapped) }
+                ) { onEvent(PhotoEvent.ThumbnailTapped) }
             }
         }
     }
@@ -399,7 +407,7 @@ private fun CameraPreview(
         AndroidView(
             factory = {
                 captureManager.showPreview(
-                    PreviewState(
+                    PreviewPhotoState(
                         cameraState = cameraState,
                         flashMode = flashMode,
                         extensionMode = extensionMode,
@@ -412,7 +420,7 @@ private fun CameraPreview(
                 when (cameraState) {
                     CameraState.NOT_READY ->
                         captureManager.queryExtensions(
-                            PreviewState(
+                            PreviewPhotoState(
                                 cameraState = cameraState,
                                 flashMode = flashMode,
                                 extensionMode = extensionMode,
@@ -421,7 +429,7 @@ private fun CameraPreview(
                         )
                     CameraState.READY ->
                         captureManager.updatePreview(
-                            PreviewState(
+                            PreviewPhotoState(
                                 cameraState = cameraState,
                                 flashMode = flashMode,
                                 extensionMode = extensionMode,

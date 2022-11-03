@@ -1,11 +1,11 @@
-package com.armutyus.cameraxproject.models
+package com.armutyus.cameraxproject.ui.photo.models
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.extensions.ExtensionMode
 
-data class PreviewState(
+data class PreviewPhotoState(
     val cameraState: CameraState = CameraState.NOT_READY,
     @ImageCapture.FlashMode val flashMode: Int = ImageCapture.FLASH_MODE_OFF,
     @TorchState.State val torchState: Int = TorchState.OFF,

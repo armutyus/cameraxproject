@@ -1,4 +1,4 @@
-package com.armutyus.cameraxproject.models
+package com.armutyus.cameraxproject.ui.photo.models
 
 import android.net.Uri
 import androidx.camera.core.CameraInfo
@@ -11,7 +11,7 @@ import com.armutyus.cameraxproject.util.Util
  * The state encapsulates the available camera extensions, the available camera lenses to toggle,
  * the current camera lens, the current extension mode, and the state of the camera.
  */
-data class State(
+data class PhotoState(
     val cameraState: CameraState = CameraState.NOT_READY,
     val availableExtensions: List<Int> = emptyList(),
     val captureWithDelay: Int = 0,

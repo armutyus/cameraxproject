@@ -18,11 +18,14 @@ import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
+import com.armutyus.cameraxproject.ui.video.VideoScreen
+import com.armutyus.cameraxproject.ui.video.VideoViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Permissions
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -35,9 +38,9 @@ class MainActivity : ComponentActivity() {
             if (modelClass.isAssignableFrom(PhotoViewModel::class.java)) {
                 return PhotoViewModel(fileManager) as T
             }
-            /*if (modelClass.isAssignableFrom(RecordingViewModel::class.java)) {
-                return RecordingViewModel(fileManager, permissionsHandler) as T
-            }*/
+            if (modelClass.isAssignableFrom(VideoViewModel::class.java)) {
+                return VideoViewModel(fileManager) as T
+            }
             throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
         }
     }
@@ -58,6 +61,11 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(PHOTO_ROUTE) {
                             PhotoScreen(navController = navController, factory = viewModelFactory) {
+                                showMessage(this@MainActivity, it)
+                            }
+                        }
+                        composable(VIDEO_ROUTE) {
+                            VideoScreen(navController = navController, factory = viewModelFactory) {
                                 showMessage(this@MainActivity, it)
                             }
                         }

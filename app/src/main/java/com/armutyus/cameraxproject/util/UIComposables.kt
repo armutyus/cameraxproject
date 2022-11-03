@@ -235,9 +235,9 @@ fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
 }
 
 @Composable
-fun CameraFlipIcon(view: View, rotation: Int, onTapped: () -> Unit) {
+fun CameraFlipIcon(modifier: Modifier = Modifier, view: View, rotation: Int, onTapped: () -> Unit) {
     IconButton(
-        modifier = Modifier
+        modifier = modifier
             .rotate(
                 when (rotation) {
                     Surface.ROTATION_0 -> 0f
@@ -267,13 +267,27 @@ fun CameraFlipIcon(view: View, rotation: Int, onTapped: () -> Unit) {
 @Composable
 fun CameraTorchIcon(
     modifier: Modifier = Modifier,
+    showFlashIcon: Boolean,
     @TorchState.State torchState: Int,
+    rotation: Int,
     onTapped: () -> Unit
 ) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
+        enabled = showFlashIcon,
         onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
         content = {
             Icon(
                 imageVector = if (torchState == TorchState.ON) {

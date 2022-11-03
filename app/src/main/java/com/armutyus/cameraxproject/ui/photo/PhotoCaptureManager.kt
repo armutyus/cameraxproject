@@ -18,7 +18,7 @@ import androidx.concurrent.futures.await
 import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
 import androidx.lifecycle.*
-import com.armutyus.cameraxproject.models.PreviewState
+import com.armutyus.cameraxproject.ui.photo.models.PreviewPhotoState
 import com.armutyus.cameraxproject.util.Util
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
@@ -134,10 +134,10 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
         photoListener.onInitialised(cameraLensInfo)
     }
 
-    fun queryExtensions(previewState: PreviewState) {
+    fun queryExtensions(previewPhotoState: PreviewPhotoState) {
         getLifeCycleOwner().lifecycleScope.launch {
             val cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(previewState.cameraLens)
+                .requireLensFacing(previewPhotoState.cameraLens)
                 .build()
 
             cameraProviderFuture = ProcessCameraProvider.getInstance(getContext())
@@ -169,7 +169,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     }
 
     /**
-     * Takes a [previewState] argument to determine the camera options
+     * Takes a [previewPhotoState] argument to determine the camera options
      *
      * Create a Preview.
      * Create Image Capture use case
@@ -178,7 +178,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
      */
     @RequiresApi(Build.VERSION_CODES.R)
     @Synchronized
-    private fun showPreview(previewState: PreviewState, cameraPreview: PreviewView): View {
+    private fun showPreview(previewPhotoState: PreviewPhotoState, cameraPreview: PreviewView): View {
         getLifeCycleOwner().lifecycleScope.launchWhenResumed {
             cameraProviderFuture = ProcessCameraProvider.getInstance(getContext())
 
@@ -200,16 +200,16 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
 
             //Select a camera lens with or without extensions
             val cameraSelector: CameraSelector =
-                if (previewState.extensionMode == ExtensionMode.NONE) {
+                if (previewPhotoState.extensionMode == ExtensionMode.NONE) {
                     CameraSelector.Builder()
-                        .requireLensFacing(previewState.cameraLens)
+                        .requireLensFacing(previewPhotoState.cameraLens)
                         .build()
                 } else {
                     extensionsManager.getExtensionEnabledCameraSelector(
                         CameraSelector.Builder()
-                            .requireLensFacing(previewState.cameraLens)
+                            .requireLensFacing(previewPhotoState.cameraLens)
                             .build(),
-                        previewState.extensionMode
+                        previewPhotoState.extensionMode
                     )
                 }
 
@@ -226,7 +226,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
             imageCapture = ImageCapture.Builder()
                 .setTargetAspectRatio(screenAspectRatio)
                 .setTargetRotation(rotation)
-                .setFlashMode(previewState.flashMode)
+                .setFlashMode(previewPhotoState.flashMode)
                 .build()
 
             //Create Image Analyzer use case
@@ -251,13 +251,13 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    fun showPreview(previewState: PreviewState): View {
-        return showPreview(previewState, getCameraPreview())
+    fun showPreview(previewPhotoState: PreviewPhotoState): View {
+        return showPreview(previewPhotoState, getCameraPreview())
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    fun updatePreview(previewState: PreviewState, previewView: View) {
-        showPreview(previewState, previewView as PreviewView)
+    fun updatePreview(previewPhotoState: PreviewPhotoState, previewView: View) {
+        showPreview(previewPhotoState, previewView as PreviewView)
     }
 
     fun takePhoto(filePath: String, cameraLens: Int) {

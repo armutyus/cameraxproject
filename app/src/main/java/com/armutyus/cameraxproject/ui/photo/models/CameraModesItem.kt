@@ -1,4 +1,4 @@
-package com.armutyus.cameraxproject.models
+package com.armutyus.cameraxproject.ui.photo.models
 
 data class CameraModesItem(
     val cameraMode: Int,
