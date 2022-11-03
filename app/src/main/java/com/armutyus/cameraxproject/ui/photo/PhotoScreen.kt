@@ -83,16 +83,19 @@ fun PhotoScreen(
             orientationEventListener.disable()
         }
     }
-    
+
     LockScreenOrientation(orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
     val listener = remember {
         object : PhotoCaptureManager.PhotoListener {
             override fun onInitialised(
-                cameraLensInfo: HashMap<Int, CameraInfo>,
-                availableExtensions: List<Int>
+                cameraLensInfo: HashMap<Int, CameraInfo>
             ) {
-                photoViewModel.onEvent(Event.CameraInitialized(cameraLensInfo, availableExtensions))
+                photoViewModel.onEvent(Event.CameraInitialized(cameraLensInfo))
+            }
+
+            override fun onExtensionModeChanged(availableExtensions: List<Int>) {
+                photoViewModel.onEvent(Event.ExtensionModeChanged(availableExtensions))
             }
 
             override fun onSuccess(imageResult: ImageCapture.OutputFileResults) {
@@ -208,7 +211,13 @@ private fun PhotoScreenContent(
                     imageUri = imageUri,
                     rotation = rotation,
                     onFlipTapped = { onEvent(Event.FlipTapped) },
-                    onCameraModeTapped = { extension -> onEvent(Event.SelectCameraExtension(extension))}
+                    onCameraModeTapped = { extension ->
+                        onEvent(
+                            Event.SelectCameraExtension(
+                                extension
+                            )
+                        )
+                    }
                 ) { onEvent(Event.ThumbnailTapped) }
             }
         }
@@ -338,7 +347,11 @@ fun CameraControlsRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CapturedImageThumbnailIcon(imageUri = imageUri, rotation = rotation, onTapped = onThumbnailTapped)
+            CapturedImageThumbnailIcon(
+                imageUri = imageUri,
+                rotation = rotation,
+                onTapped = onThumbnailTapped
+            )
             CameraCaptureIcon(view = view, onTapped = onCaptureTapped)
             if (showFlipIcon) {
                 CameraFlipIcon(view = view, rotation = rotation, onTapped = onFlipTapped)
@@ -396,13 +409,27 @@ private fun CameraPreview(
             },
             modifier = Modifier.fillMaxSize(),
             update = {
-                captureManager.updatePreview(
-                    PreviewState(
-                        cameraState = cameraState,
-                        flashMode = flashMode,
-                        cameraLens = lens
-                    ), it
-                )
+                when (cameraState) {
+                    CameraState.NOT_READY ->
+                        captureManager.queryExtensions(
+                            PreviewState(
+                                cameraState = cameraState,
+                                flashMode = flashMode,
+                                extensionMode = extensionMode,
+                                cameraLens = lens
+                            )
+                        )
+                    CameraState.READY ->
+                        captureManager.updatePreview(
+                            PreviewState(
+                                cameraState = cameraState,
+                                flashMode = flashMode,
+                                extensionMode = extensionMode,
+                                cameraLens = lens
+                            ),
+                            it
+                        )
+                }
             }
         )
     }

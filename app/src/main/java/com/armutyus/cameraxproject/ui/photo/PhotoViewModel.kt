@@ -10,9 +10,9 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.models.CameraState
-import com.armutyus.cameraxproject.models.State
 import com.armutyus.cameraxproject.models.Effect
 import com.armutyus.cameraxproject.models.Event
+import com.armutyus.cameraxproject.models.State
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
@@ -50,7 +50,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             Event.ThumbnailTapped -> onThumbnailTapped()
             Event.VideoModeTapped -> onVideoModeTapped()
 
-            is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo, event.availableExtensions)
+            is Event.CameraInitialized -> onCameraInitialized(event.cameraLensInfo)
+            is Event.ExtensionModeChanged -> onExtensionModeChanged(event.availableExtensions)
             is Event.Error -> onError()
             is Event.ImageCaptured -> onImageCaptured(event.imageResult.savedUri)
             is Event.SelectCameraExtension -> setExtensionMode(event.extension)
@@ -205,8 +206,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>, availableExtensions: List<Int>) {
-        val currentState = _state.value
+    private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>) {
         if (cameraLensInfo.isNotEmpty()) {
             val defaultLens = if (cameraLensInfo[CameraSelector.LENS_FACING_BACK] != null) {
                 CameraSelector.LENS_FACING_BACK
@@ -222,7 +222,10 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 )
             }
         }
+    }
 
+    private fun onExtensionModeChanged(availableExtensions: List<Int>) {
+        val currentState = _state.value
         if (availableExtensions.isEmpty()) {
             _state.update {
                 it.copy(

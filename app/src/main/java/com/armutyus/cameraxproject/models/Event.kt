@@ -5,7 +5,8 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.extensions.ExtensionMode
 
 sealed class Event {
-    data class CameraInitialized(val cameraLensInfo: HashMap<Int, CameraInfo>, val availableExtensions: List<Int>) : Event()
+    data class CameraInitialized(val cameraLensInfo: HashMap<Int, CameraInfo>) : Event()
+    data class ExtensionModeChanged(val availableExtensions: List<Int>) : Event()
     data class ImageCaptured(val imageResult: ImageCapture.OutputFileResults) : Event()
     data class Error(val exception: Exception) : Event()
     data class SelectCameraExtension(@ExtensionMode.Mode val extension: Int) : Event()

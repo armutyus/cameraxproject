@@ -36,10 +36,5 @@ enum class CameraState {
     /**
      * Camera is open and presenting a preview stream.
      */
-    READY,
-
-    /**
-     * Camera is initialized but the preview has been stopped.
-     */
-    PREVIEW_STOPPED
+    READY
 }

@@ -1,7 +1,5 @@
 package com.armutyus.cameraxproject.util
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.net.Uri
 import android.os.CountDownTimer
 import android.text.format.DateUtils
@@ -14,7 +12,6 @@ import androidx.camera.core.TorchState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,7 +53,12 @@ fun DefaultPreview() {
 }
 
 @Composable
-fun CapturedImageThumbnailIcon(modifier: Modifier = Modifier, imageUri: Uri?, rotation: Int, onTapped: () -> Unit) {
+fun CapturedImageThumbnailIcon(
+    modifier: Modifier = Modifier,
+    imageUri: Uri?,
+    rotation: Int,
+    onTapped: () -> Unit
+) {
     IconButton(
         modifier = Modifier
             .then(modifier),
@@ -236,13 +238,15 @@ fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Un
 fun CameraFlipIcon(view: View, rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .rotate(when (rotation) {
-                Surface.ROTATION_0 -> 0f
-                Surface.ROTATION_90 -> 90f
-                Surface.ROTATION_180 -> 180f
-                Surface.ROTATION_270 -> 270f
-                else -> 0f
-            }),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
@@ -291,13 +295,15 @@ fun CameraDelayIcon(
 ) {
     IconButton(
         modifier = Modifier
-            .rotate(when (rotation) {
-                Surface.ROTATION_0 -> 0f
-                Surface.ROTATION_90 -> 90f
-                Surface.ROTATION_180 -> 180f
-                Surface.ROTATION_270 -> 270f
-                else -> 0f
-            }),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = { onTapped() },
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
@@ -325,13 +331,15 @@ fun CameraFlashIcon(
 ) {
     IconButton(
         modifier = Modifier
-            .rotate(when (rotation) {
-                Surface.ROTATION_0 -> 0f
-                Surface.ROTATION_90 -> 90f
-                Surface.ROTATION_180 -> 180f
-                Surface.ROTATION_270 -> 270f
-                else -> 0f
-            }),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = { onTapped() },
         enabled = showFlashIcon,
         colors = IconButtonDefaults.iconButtonColors(
@@ -355,13 +363,15 @@ fun CameraFlashIcon(
 fun CameraEditIcon(rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .rotate(when (rotation) {
-                Surface.ROTATION_0 -> 0f
-                Surface.ROTATION_90 -> 90f
-                Surface.ROTATION_180 -> 180f
-                Surface.ROTATION_270 -> 270f
-                else -> 0f
-            }),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = { },
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
@@ -379,13 +389,15 @@ fun CameraEditIcon(rotation: Int, onTapped: () -> Unit) {
 fun SettingsIcon(rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .rotate(when (rotation) {
-                Surface.ROTATION_0 -> 0f
-                Surface.ROTATION_90 -> 90f
-                Surface.ROTATION_180 -> 180f
-                Surface.ROTATION_270 -> 270f
-                else -> 0f
-            }),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = { },
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
