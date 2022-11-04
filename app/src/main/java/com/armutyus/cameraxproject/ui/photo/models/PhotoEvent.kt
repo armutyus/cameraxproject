@@ -15,8 +15,6 @@ sealed class PhotoEvent {
     object DelayTimerTapped : PhotoEvent()
     object FlashTapped : PhotoEvent()
     object FlipTapped : PhotoEvent()
-    object PhotoModeTapped : PhotoEvent()
     object SettingsTapped : PhotoEvent()
     object ThumbnailTapped : PhotoEvent()
-    object VideoModeTapped : PhotoEvent()
 }

@@ -23,7 +23,6 @@ import com.armutyus.cameraxproject.util.Util
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.UNKNOWN_ORIENTATION
-import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import com.armutyus.cameraxproject.util.aspectRatio
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
@@ -143,7 +142,8 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
             cameraProviderFuture = ProcessCameraProvider.getInstance(getContext())
 
             val cameraProvider = cameraProviderFuture.await()
-            val extensionsManager = ExtensionsManager.getInstanceAsync(getContext(), cameraProvider).await()
+            val extensionsManager =
+                ExtensionsManager.getInstanceAsync(getContext(), cameraProvider).await()
 
             cameraProvider.unbindAll()
 
@@ -161,8 +161,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
 
             photoListener.onExtensionModeChanged(
                 availableExtensions = listOf(
-                    ExtensionMode.NONE,
-                    VIDEO_MODE
+                    ExtensionMode.NONE
                 ) + availableExtensions
             )
         }
@@ -178,12 +177,16 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
      */
     @RequiresApi(Build.VERSION_CODES.R)
     @Synchronized
-    private fun showPreview(previewPhotoState: PreviewPhotoState, cameraPreview: PreviewView): View {
+    private fun showPreview(
+        previewPhotoState: PreviewPhotoState,
+        cameraPreview: PreviewView
+    ): View {
         getLifeCycleOwner().lifecycleScope.launchWhenResumed {
             cameraProviderFuture = ProcessCameraProvider.getInstance(getContext())
 
             val cameraProvider = cameraProviderFuture.await()
-            val extensionsManager = ExtensionsManager.getInstanceAsync(getContext(), cameraProvider).await()
+            val extensionsManager =
+                ExtensionsManager.getInstanceAsync(getContext(), cameraProvider).await()
 
             cameraProvider.unbindAll()
 
@@ -245,7 +248,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                 imageCapture,
                 imageAnalyzer
             )
-            setupZoomAndTapToFocus(cameraPreview,camera)
+            setupZoomAndTapToFocus(cameraPreview, camera)
         }
         return cameraPreview
     }

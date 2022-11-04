@@ -20,7 +20,6 @@ import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_PREVIEW_ROUTE
-import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
@@ -45,10 +44,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             PhotoEvent.DelayTimerTapped -> onDelayTimerTapped()
             PhotoEvent.FlashTapped -> onFlashTapped()
             PhotoEvent.FlipTapped -> onFlipTapped()
-            PhotoEvent.PhotoModeTapped -> onPhotoModeTapped()
             PhotoEvent.SettingsTapped -> onSettingsTapped()
             PhotoEvent.ThumbnailTapped -> onThumbnailTapped()
-            PhotoEvent.VideoModeTapped -> onVideoModeTapped()
 
             is PhotoEvent.CameraInitialized -> onCameraInitialized(photoEvent.cameraLensInfo)
             is PhotoEvent.ExtensionModeChanged -> onExtensionModeChanged(photoEvent.availableExtensions)
@@ -81,7 +78,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 }
                 TIMER_3S -> {
                     _photoState.update { it.copy(captureWithDelay = DELAY_3S) }
-                    delay(3000)
+                    delay(3000L)
                     try {
                         val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
                         _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
@@ -158,12 +155,6 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onPhotoModeTapped() {
-        viewModelScope.launch {
-            _photoEffect.emit(PhotoEffect.NavigateTo(PHOTO_ROUTE))
-        }
-    }
-
     private fun onSettingsTapped() {
         viewModelScope.launch {
             _photoEffect.emit(PhotoEffect.NavigateTo(SETTINGS_ROUTE))
@@ -173,12 +164,6 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     private fun onThumbnailTapped() {
         viewModelScope.launch {
             _photoEffect.emit(PhotoEffect.NavigateTo(PHOTO_PREVIEW_ROUTE))
-        }
-    }
-
-    private fun onVideoModeTapped() {
-        viewModelScope.launch {
-            _photoEffect.emit(PhotoEffect.NavigateTo(VIDEO_ROUTE))
         }
     }
 

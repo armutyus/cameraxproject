@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.*
 import com.armutyus.cameraxproject.util.*
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
 
@@ -137,7 +138,7 @@ fun PhotoScreen(
     }
 
     val mediaDir = context.getExternalFilesDir("cameraXproject")?.let {
-        File(it, "Photos").apply { mkdirs() }
+        File(it, PHOTO_DIR).apply { mkdirs() }
     }
 
     val latestCapturedPhoto = state.latestImageUri ?: mediaDir?.listFiles()?.firstOrNull {
@@ -292,8 +293,7 @@ internal fun BottomControls(
         ExtensionMode.HDR to R.string.camera_mode_hdr,
         ExtensionMode.FACE_RETOUCH to R.string.camera_mode_face_retouch,
         ExtensionMode.BOKEH to R.string.camera_mode_bokeh,
-        ExtensionMode.NONE to R.string.camera_mode_none,
-        VIDEO_MODE to R.string.camera_mode_video
+        ExtensionMode.NONE to R.string.camera_mode_none
     )
 
     val cameraModesList = availableExtensions.map {
@@ -302,7 +302,7 @@ internal fun BottomControls(
             stringResource(id = cameraModes[it]!!),
             extensionMode == it
         )
-    }
+    } + CameraModesItem(VIDEO_MODE, "Video", extensionMode == VIDEO_MODE)
 
     val scrollState = rememberScrollState()
 

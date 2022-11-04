@@ -35,7 +35,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
+import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
@@ -47,7 +49,7 @@ import java.util.concurrent.TimeUnit
 @Preview
 @Composable
 fun DefaultPreview() {
-    CameraCaptureIcon(modifier = Modifier, view = LocalView.current) {
+    CameraRecordIcon(modifier = Modifier, view = LocalView.current) {
 
     }
 }
@@ -83,9 +85,57 @@ fun CapturedImageThumbnailIcon(
                 painter = rememberAsyncImagePainter(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(data = imageUri)
+                        .crossfade(true)
                         .build(),
                     filterQuality = FilterQuality.Medium
                 ),
+                contentDescription = stringResource(id = R.string.latest_image),
+                contentScale = ContentScale.Crop
+            )
+        }
+    )
+}
+
+@Composable
+fun CapturedVideoThumbnailIcon(
+    modifier: Modifier = Modifier,
+    imageUri: Uri?,
+    rotation: Int,
+    onTapped: () -> Unit
+) {
+    val imageLoader = ImageLoader.Builder(LocalContext.current)
+        .components {
+            add(VideoFrameDecoder.Factory())
+        }.crossfade(true)
+        .build()
+
+    val painter = rememberAsyncImagePainter(
+        model = imageUri,
+        imageLoader = imageLoader,
+        filterQuality = FilterQuality.Medium
+    )
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = {
+            onTapped()
+        },
+        content = {
+            Image(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .border(width = 1.dp, color = Color.White, shape = CircleShape)
+                    .rotate(
+                        when (rotation) {
+                            Surface.ROTATION_0 -> 0f
+                            Surface.ROTATION_90 -> 90f
+                            Surface.ROTATION_180 -> 180f
+                            Surface.ROTATION_270 -> 270f
+                            else -> 0f
+                        }
+                    ),
+                painter = painter,
                 contentDescription = stringResource(id = R.string.latest_image),
                 contentScale = ContentScale.Crop
             )
@@ -165,6 +215,7 @@ fun CameraPauseIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         ),
         content = {
             Icon(
+                modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.PauseCircle,
                 contentDescription = stringResource(id = R.string.pause_recording)
             )
@@ -184,6 +235,7 @@ fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         ),
         content = {
             Icon(
+                modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.PlayCircle,
                 contentDescription = stringResource(id = R.string.resume_recording)
             )
@@ -195,13 +247,15 @@ fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .size(64.dp)
+            .padding(1.dp)
+            .border(1.dp, Color.White, CircleShape),
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
         },
         colors = IconButtonDefaults.iconButtonColors(
-            contentColor = MaterialTheme.colorScheme.primary
+            contentColor = MaterialTheme.colorScheme.primaryContainer
         ),
         content = {
             Icon(
@@ -216,7 +270,8 @@ fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> 
 fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .size(64.dp)
+            .padding(1.dp),
         onClick = {
             view.vibrate(HapticFeedbackConstants.LONG_PRESS)
             onTapped()
@@ -273,7 +328,7 @@ fun CameraTorchIcon(
     onTapped: () -> Unit
 ) {
     IconButton(
-        modifier = Modifier
+        modifier = modifier
             .rotate(
                 when (rotation) {
                     Surface.ROTATION_0 -> 0f

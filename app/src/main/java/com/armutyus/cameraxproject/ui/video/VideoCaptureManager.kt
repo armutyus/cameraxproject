@@ -3,9 +3,12 @@ package com.armutyus.cameraxproject.ui.video
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import android.util.Log
+import android.os.Build
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -23,7 +26,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.armutyus.cameraxproject.ui.video.models.PreviewVideoState
 import com.armutyus.cameraxproject.util.Util
-import com.armutyus.cameraxproject.util.aspectRatio
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 
@@ -51,6 +53,44 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                 }, ContextCompat.getMainExecutor(getContext()))
             }
             else -> Unit
+        }
+    }
+
+    private fun getCameraPreview() = PreviewView(getContext()).apply {
+        layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+        keepScreenOn = true
+    }
+
+    private fun getLifecycle() = builder.lifecycleOwner?.lifecycle!!
+
+    private fun getContext() = builder.context
+
+    private fun getLifeCycleOwner() = builder.lifecycleOwner!!
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun getView() = builder.context.display!!
+
+    /**
+     * Using an OrientationEventListener allows you to continuously update the target rotation
+     * of the camera use cases as the device’s orientation changes.
+     */
+    private val orientationEventListener by lazy {
+        object : OrientationEventListener(getContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == Util.UNKNOWN_ORIENTATION) {
+                    return
+                }
+
+                val rotation = when (orientation) {
+                    in 45 until 135 -> Surface.ROTATION_270
+                    in 135 until 225 -> Surface.ROTATION_180
+                    in 225 until 315 -> Surface.ROTATION_90
+                    else -> Surface.ROTATION_0
+                }
+            }
         }
     }
 
@@ -88,10 +128,16 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
      * Bind the selected camera and any use cases to the lifecycle.
      * Connect the Preview to the PreviewView.
      */
-    fun showPreview(previewVideoState: PreviewVideoState, cameraPreview: PreviewView = getCameraPreview()): View {
+    fun showPreview(
+        previewVideoState: PreviewVideoState,
+        cameraPreview: PreviewView = getCameraPreview()
+    ): View {
         getLifeCycleOwner().lifecycleScope.launchWhenResumed {
             val cameraProvider = cameraProviderFuture.await()
             cameraProvider.unbindAll()
+
+            // Every time the orientation of device changes, update rotation for use cases
+            orientationEventListener.enable()
 
             //Select a camera lens
             val cameraSelector: CameraSelector = CameraSelector.Builder()
@@ -122,20 +168,6 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
     fun updatePreview(previewVideoState: PreviewVideoState, previewView: View) {
         showPreview(previewVideoState, previewView as PreviewView)
     }
-
-    private fun getCameraPreview() = PreviewView(getContext()).apply {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        keepScreenOn = true
-    }
-
-    private fun getLifecycle() = builder.lifecycleOwner?.lifecycle!!
-
-    private fun getContext() = builder.context
-
-    private fun getLifeCycleOwner() = builder.lifecycleOwner!!
 
     @SuppressLint("MissingPermission")
     fun startRecording(filePath: String) {
