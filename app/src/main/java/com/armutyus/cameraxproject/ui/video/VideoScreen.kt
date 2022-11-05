@@ -8,10 +8,13 @@ import android.view.View
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.TorchState
 import androidx.camera.extensions.ExtensionMode
+import androidx.camera.video.Quality
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,6 +42,11 @@ import com.armutyus.cameraxproject.ui.video.models.RecordingStatus
 import com.armutyus.cameraxproject.ui.video.models.VideoEffect
 import com.armutyus.cameraxproject.ui.video.models.VideoEvent
 import com.armutyus.cameraxproject.util.*
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
@@ -128,10 +136,12 @@ fun VideoScreen(
             availableExtensions = listOf(ExtensionMode.NONE, VIDEO_MODE),
             extensionMode = state.extensionMode,
             cameraLens = state.lens,
-            videoUri = latestCapturedVideo,
+            delayTimer = state.delayTimer,
             torchState = state.torchState,
             hasFlashUnit = state.lensInfo[state.lens]?.hasFlashUnit() ?: false,
             hasDualCamera = state.lensInfo.size > 1,
+            videoUri = latestCapturedVideo,
+            quality = Quality.HIGHEST /* TODO add quality selector */,
             recordedLength = state.recordedLength,
             recordingStatus = state.recordingStatus,
             rotation = rotation,
@@ -167,10 +177,12 @@ private fun VideoScreenContent(
     availableExtensions: List<Int>,
     extensionMode: Int,
     cameraLens: Int?,
+    delayTimer: Int,
     @TorchState.State torchState: Int,
     hasFlashUnit: Boolean,
     hasDualCamera: Boolean,
     videoUri: Uri?,
+    quality: Quality,
     recordedLength: Int,
     recordingStatus: RecordingStatus,
     rotation: Int,
@@ -186,11 +198,18 @@ private fun VideoScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (recordingStatus == RecordingStatus.Idle) {
-                    CaptureHeader(
+                    VideoTopControls(
                         showFlashIcon = hasFlashUnit,
+                        delayTimer = delayTimer,
                         torchState = torchState,
                         rotation = rotation,
-                    ) { onEvent(VideoEvent.FlashTapped) }
+                        quality = quality,
+                        onDelayTimerTapped = { onEvent(VideoEvent.DelayTimerTapped) },
+                        onFlashTapped = { onEvent(VideoEvent.FlashTapped) },
+                        onQualitySelectorTapped = { /* TODO add quality selector */ }
+                    ) {
+                        onEvent(VideoEvent.SettingsTapped)
+                    }
                 }
                 if (recordedLength > 0) {
                     Timer(
@@ -211,7 +230,13 @@ private fun VideoScreenContent(
                     rotation = rotation,
                     view = view,
                     onThumbnailTapped = { onEvent(VideoEvent.ThumbnailTapped) },
-                    onRecordTapped = { onEvent(VideoEvent.RecordTapped) },
+                    onRecordTapped = {
+                        when (delayTimer) {
+                            TIMER_OFF -> onEvent(VideoEvent.RecordTapped(0L))
+                            TIMER_3S -> onEvent(VideoEvent.RecordTapped(DELAY_3S))
+                            TIMER_10S -> onEvent(VideoEvent.RecordTapped(DELAY_10S))
+                        }
+                    },
                     onStopTapped = { onEvent(VideoEvent.StopTapped) },
                     onPauseTapped = { onEvent(VideoEvent.PauseTapped) },
                     onResumeTapped = { onEvent(VideoEvent.ResumeTapped) },
@@ -230,26 +255,47 @@ private fun VideoScreenContent(
 }
 
 @Composable
-internal fun CaptureHeader(
-    modifier: Modifier = Modifier,
+internal fun VideoTopControls(
     showFlashIcon: Boolean,
+    delayTimer: Int,
     torchState: Int,
     rotation: Int,
-    onFlashTapped: () -> Unit
+    quality: Quality,
+    onDelayTimerTapped: () -> Unit,
+    onFlashTapped: () -> Unit,
+    onQualitySelectorTapped: () -> Unit,
+    onSettingsTapped: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
             .padding(8.dp)
-            .then(modifier)
     ) {
-        CameraTorchIcon(
-            showFlashIcon = showFlashIcon,
-            torchState = torchState,
-            rotation = rotation,
-            onTapped = onFlashTapped
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(width = 0.5.dp, shape = CircleShape, color = Color.White),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CameraDelayIcon(
+                delayTimer = delayTimer,
+                rotation = rotation,
+                onTapped = onDelayTimerTapped
+            )
+            CameraTorchIcon(
+                showFlashIcon = showFlashIcon,
+                torchState = torchState,
+                rotation = rotation,
+                onTapped = onFlashTapped
+            )
+            QualitySelectorIcon(rotation = rotation, quality = quality) {
+                onQualitySelectorTapped
+            }
+            SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
+        }
     }
 }
 
@@ -344,7 +390,7 @@ fun VideoControlsRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CapturedVideoThumbnailIcon(imageUri = videoUri, rotation = rotation) {
-                onThumbnailTapped
+                onThumbnailTapped()
             }
             when (recordingStatus) {
                 RecordingStatus.Idle -> {
@@ -358,7 +404,7 @@ fun VideoControlsRow(
                         onTapped = onStopTapped,
                         view = view
                     )
-                    CameraPlayIconSmall(onTapped = onResumeTapped)
+                    CameraPlayIconSmall(rotation = rotation, onTapped = onResumeTapped)
                 }
                 RecordingStatus.InProgress -> {
                     CameraStopIcon(

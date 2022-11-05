@@ -40,7 +40,12 @@ import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.*
 import com.armutyus.cameraxproject.util.*
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
+import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_3S
+import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
 
@@ -215,7 +220,13 @@ private fun PhotoScreenContent(
                     availableExtensions = availableExtensions,
                     extensionMode = extensionMode,
                     showFlipIcon = hasDualCamera,
-                    onCaptureTapped = { onEvent(PhotoEvent.CaptureTapped) },
+                    onCaptureTapped = {
+                        when (delayTimer) {
+                            TIMER_OFF -> onEvent(PhotoEvent.CaptureTapped(0))
+                            TIMER_3S -> onEvent(PhotoEvent.CaptureTapped(DELAY_3S))
+                            TIMER_10S -> onEvent(PhotoEvent.CaptureTapped(DELAY_10S))
+                        }
+                    },
                     view = view,
                     imageUri = imageUri,
                     rotation = rotation,

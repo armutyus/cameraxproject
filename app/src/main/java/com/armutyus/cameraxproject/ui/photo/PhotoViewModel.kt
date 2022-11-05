@@ -15,8 +15,6 @@ import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
 import com.armutyus.cameraxproject.ui.photo.models.PhotoState
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
-import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
-import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_PREVIEW_ROUTE
@@ -40,13 +38,13 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
 
     fun onEvent(photoEvent: PhotoEvent) {
         when (photoEvent) {
-            PhotoEvent.CaptureTapped -> onCaptureTapped()
             PhotoEvent.DelayTimerTapped -> onDelayTimerTapped()
             PhotoEvent.FlashTapped -> onFlashTapped()
             PhotoEvent.FlipTapped -> onFlipTapped()
             PhotoEvent.SettingsTapped -> onSettingsTapped()
             PhotoEvent.ThumbnailTapped -> onThumbnailTapped()
 
+            is PhotoEvent.CaptureTapped -> onCaptureTapped(photoEvent.timeMillis)
             is PhotoEvent.CameraInitialized -> onCameraInitialized(photoEvent.cameraLensInfo)
             is PhotoEvent.ExtensionModeChanged -> onExtensionModeChanged(photoEvent.availableExtensions)
             is PhotoEvent.Error -> onError()
@@ -55,8 +53,18 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onCaptureTapped() {
-        _photoState.update {
+    private fun onCaptureTapped(timeMillis: Long) {
+        viewModelScope.launch {
+            delay(timeMillis)
+            try {
+                val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
+                _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
+            } catch (exception: IllegalArgumentException) {
+                Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
+                _photoEffect.emit(PhotoEffect.ShowMessage())
+            }
+        }
+        /*_photoState.update {
             when (_photoState.value.delayTimer) {
                 TIMER_OFF -> it.copy(captureWithDelay = 0)
                 TIMER_3S -> it.copy(captureWithDelay = DELAY_3S)
@@ -98,7 +106,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                     }
                 }
             }
-        }
+        }*/
     }
 
     private fun onDelayTimerTapped() {

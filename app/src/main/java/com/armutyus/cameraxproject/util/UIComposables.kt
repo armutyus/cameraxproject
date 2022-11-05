@@ -9,6 +9,7 @@ import android.view.Surface
 import android.view.View
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
+import androidx.camera.video.Quality
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -110,7 +111,10 @@ fun CapturedVideoThumbnailIcon(
         .build()
 
     val painter = rememberAsyncImagePainter(
-        model = imageUri,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(data = imageUri)
+            .crossfade(true)
+            .build(),
         imageLoader = imageLoader,
         filterQuality = FilterQuality.Medium
     )
@@ -225,10 +229,18 @@ fun CameraPauseIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 
 
 @Composable
-fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+fun CameraPlayIconSmall(modifier: Modifier = Modifier, rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
-            .then(modifier),
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
         onClick = { onTapped() },
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
@@ -246,7 +258,7 @@ fun CameraPlayIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 @Composable
 fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
     IconButton(
-        modifier = Modifier
+        modifier = modifier
             .size(64.dp)
             .padding(1.dp)
             .border(1.dp, Color.White, CircleShape),
@@ -269,7 +281,7 @@ fun CameraRecordIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> 
 @Composable
 fun CameraStopIcon(modifier: Modifier = Modifier, view: View, onTapped: () -> Unit) {
     IconButton(
-        modifier = Modifier
+        modifier = modifier
             .size(64.dp)
             .padding(1.dp),
         onClick = {
@@ -449,6 +461,38 @@ fun CameraEditIcon(rotation: Int, onTapped: () -> Unit) {
             Icon(
                 imageVector = Icons.Sharp.AutoFixHigh,
                 contentDescription = stringResource(id = R.string.add_filter)
+            )
+        }
+    )
+}
+
+@Composable
+fun QualitySelectorIcon(rotation: Int, quality: Quality, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .rotate(
+                when (rotation) {
+                    Surface.ROTATION_0 -> 0f
+                    Surface.ROTATION_90 -> 90f
+                    Surface.ROTATION_180 -> 180f
+                    Surface.ROTATION_270 -> 270f
+                    else -> 0f
+                }
+            ),
+        onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
+        content = {
+            Icon(
+                imageVector = when (quality) {
+                    Quality.SD -> Icons.Sharp.Sd
+                    Quality.HD -> Icons.Sharp.Hd
+                    Quality.FHD -> Icons.Sharp._2k
+                    Quality.UHD -> Icons.Sharp._4k
+                    else -> Icons.Sharp.Sd
+                },
+                contentDescription = stringResource(id = R.string.quality_selector)
             )
         }
     )

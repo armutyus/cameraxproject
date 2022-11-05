@@ -19,6 +19,7 @@ import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_PREVIEW_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_EXTENSION
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -37,12 +38,14 @@ class VideoViewModel constructor(
             VideoEvent.FlashTapped -> onFlashTapped()
             VideoEvent.FlipTapped -> onFlipTapped()
             VideoEvent.ThumbnailTapped -> onThumbnailTapped()
+            VideoEvent.DelayTimerTapped -> onDelayTimerTapped()
+            VideoEvent.SettingsTapped -> onSettingsTapped()
 
-            VideoEvent.RecordTapped -> onRecordTapped()
             VideoEvent.PauseTapped -> onPauseTapped()
             VideoEvent.ResumeTapped -> onResumeTapped()
             VideoEvent.StopTapped -> onStopTapped()
 
+            is VideoEvent.RecordTapped -> onRecordTapped(videoEvent.timeMillis)
             is VideoEvent.CameraInitialized -> onCameraInitialized(videoEvent.cameraLensInfo)
             is VideoEvent.SelectCameraExtension -> setExtensionMode(videoEvent.extension)
             is VideoEvent.OnProgress -> onProgress(videoEvent.progress)
@@ -103,8 +106,9 @@ class VideoViewModel constructor(
         }
     }
 
-    private fun onRecordTapped() {
+    private fun onRecordTapped(timeMillis: Long) {
         viewModelScope.launch {
+            delay(timeMillis)
             try {
                 val filePath = fileManager.createFile(VIDEO_DIR, VIDEO_EXTENSION)
                 _videoEffect.emit(VideoEffect.RecordVideo(filePath))
@@ -158,6 +162,23 @@ class VideoViewModel constructor(
             viewModelScope.launch {
                 _videoEffect.emit(VideoEffect.NavigateTo(PHOTO_ROUTE))
             }
+        }
+    }
+
+    private fun onDelayTimerTapped() {
+        _videoState.update {
+            when (_videoState.value.delayTimer) {
+                Util.TIMER_OFF -> it.copy(delayTimer = Util.TIMER_3S)
+                Util.TIMER_3S -> it.copy(delayTimer = Util.TIMER_10S)
+                Util.TIMER_10S -> it.copy(delayTimer = Util.TIMER_OFF)
+                else -> it.copy(delayTimer = Util.TIMER_OFF)
+            }
+        }
+    }
+
+    private fun onSettingsTapped() {
+        viewModelScope.launch {
+            _videoEffect.emit(VideoEffect.NavigateTo(Util.SETTINGS_ROUTE))
         }
     }
 

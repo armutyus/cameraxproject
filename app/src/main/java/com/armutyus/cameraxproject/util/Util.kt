@@ -34,8 +34,8 @@ class Util {
         const val TIMER_OFF = 0
         const val TIMER_3S = 1
         const val TIMER_10S = 2
-        const val DELAY_3S = 3000
-        const val DELAY_10S = 10000
+        const val DELAY_3S = 3000L
+        const val DELAY_10S = 10000L
     }
 
     object ScreenSizeCompat {

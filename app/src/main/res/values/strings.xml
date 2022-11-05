@@ -22,6 +22,7 @@
     <string name="add_filter">Add filter</string>
     <string name="go_settings">Go to settings</string>
     <string name="delay_settings">Capture delay settings</string>
+    <string name="quality_selector">Change video quality</string>
     <string name="camera_mode_auto">Auto</string>
     <string name="camera_mode_night">Night</string>
     <string name="camera_mode_hdr">HDR</string>

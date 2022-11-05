@@ -10,8 +10,8 @@ sealed class PhotoEvent {
     data class ImageCaptured(val imageResult: ImageCapture.OutputFileResults) : PhotoEvent()
     data class Error(val exception: Exception) : PhotoEvent()
     data class SelectCameraExtension(@ExtensionMode.Mode val extension: Int) : PhotoEvent()
+    data class CaptureTapped(val timeMillis: Long = 0L) : PhotoEvent()
 
-    object CaptureTapped : PhotoEvent()
     object DelayTimerTapped : PhotoEvent()
     object FlashTapped : PhotoEvent()
     object FlipTapped : PhotoEvent()

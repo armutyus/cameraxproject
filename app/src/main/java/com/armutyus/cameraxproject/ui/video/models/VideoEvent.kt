@@ -14,8 +14,10 @@ sealed class VideoEvent {
     object FlashTapped : VideoEvent()
     object FlipTapped : VideoEvent()
     object ThumbnailTapped : VideoEvent()
+    object DelayTimerTapped : VideoEvent()
+    object SettingsTapped : VideoEvent()
 
-    object RecordTapped : VideoEvent()
+    data class RecordTapped(val timeMillis: Long = 0L) : VideoEvent()
     object PauseTapped : VideoEvent()
     object ResumeTapped : VideoEvent()
     object StopTapped : VideoEvent()
