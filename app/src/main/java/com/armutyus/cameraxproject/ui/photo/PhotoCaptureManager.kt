@@ -38,11 +38,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
     private lateinit var imageAnalyzer: ImageAnalysis
 
     var photoListener: PhotoListener = object : PhotoListener {
-        override fun onInitialised(
-            cameraLensInfo: HashMap<Int, CameraInfo>
-        ) {
-        }
-
+        override fun onInitialised(cameraLensInfo: HashMap<Int, CameraInfo>) {}
         override fun onExtensionModeChanged(availableExtensions: List<Int>) {}
         override fun onSuccess(imageResult: ImageCapture.OutputFileResults) {}
         override fun onError(exception: Exception) {}

@@ -490,7 +490,7 @@ fun QualitySelectorIcon(rotation: Int, quality: Quality, onTapped: () -> Unit) {
                     Quality.HD -> Icons.Sharp.Hd
                     Quality.FHD -> Icons.Sharp._2k
                     Quality.UHD -> Icons.Sharp._4k
-                    else -> Icons.Sharp.Sd
+                    else -> Icons.Sharp.HighQuality
                 },
                 contentDescription = stringResource(id = R.string.quality_selector)
             )

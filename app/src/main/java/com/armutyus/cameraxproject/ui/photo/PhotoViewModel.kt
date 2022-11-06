@@ -64,49 +64,6 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
                 _photoEffect.emit(PhotoEffect.ShowMessage())
             }
         }
-        /*_photoState.update {
-            when (_photoState.value.delayTimer) {
-                TIMER_OFF -> it.copy(captureWithDelay = 0)
-                TIMER_3S -> it.copy(captureWithDelay = DELAY_3S)
-                TIMER_10S -> it.copy(captureWithDelay = DELAY_10S)
-                else -> it.copy(captureWithDelay = 0)
-            }
-        }
-        viewModelScope.launch {
-            when (_photoState.value.delayTimer) {
-                TIMER_OFF -> {
-                    _photoState.update { it.copy(captureWithDelay = 0) }
-                    try {
-                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
-                    } catch (exception: IllegalArgumentException) {
-                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _photoEffect.emit(PhotoEffect.ShowMessage())
-                    }
-                }
-                TIMER_3S -> {
-                    _photoState.update { it.copy(captureWithDelay = DELAY_3S) }
-                    delay(3000L)
-                    try {
-                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
-                    } catch (exception: IllegalArgumentException) {
-                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _photoEffect.emit(PhotoEffect.ShowMessage())
-                    }
-                }
-                TIMER_10S -> {
-                    delay(10000)
-                    try {
-                        val filePath = fileManager.createFile(PHOTO_DIR, PHOTO_EXTENSION)
-                        _photoEffect.emit(PhotoEffect.CaptureImage(filePath))
-                    } catch (exception: IllegalArgumentException) {
-                        Log.e(TAG, exception.localizedMessage ?: CAPTURE_FAIL)
-                        _photoEffect.emit(PhotoEffect.ShowMessage())
-                    }
-                }
-            }
-        }*/
     }
 
     private fun onDelayTimerTapped() {

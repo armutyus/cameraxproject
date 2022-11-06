@@ -3,12 +3,11 @@ package com.armutyus.cameraxproject.ui.video
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import android.os.Build
+import android.util.Log
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
@@ -24,9 +23,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.video.models.PreviewVideoState
 import com.armutyus.cameraxproject.util.Util
+import com.armutyus.cameraxproject.util.Util.Companion.TAG
+import com.armutyus.cameraxproject.util.getAspectRatio
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.launch
 import java.io.File
 
 class VideoCaptureManager private constructor(private val builder: Builder) :
@@ -34,8 +37,9 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     private lateinit var videoCapture: VideoCapture<Recorder>
-
     private lateinit var activeRecording: Recording
+
+    private val supportedQualities = mutableListOf<Quality>()
 
     var listener: Listener? = null
 
@@ -70,15 +74,13 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
 
     private fun getLifeCycleOwner() = builder.lifecycleOwner!!
 
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun getView() = builder.context.display!!
-
     /**
      * Using an OrientationEventListener allows you to continuously update the target rotation
      * of the camera use cases as the device’s orientation changes.
      */
     private val orientationEventListener by lazy {
         object : OrientationEventListener(getContext()) {
+            @SuppressLint("RestrictedApi")
             override fun onOrientationChanged(orientation: Int) {
                 if (orientation == Util.UNKNOWN_ORIENTATION) {
                     return
@@ -90,6 +92,8 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                     in 225 until 315 -> Surface.ROTATION_90
                     else -> Surface.ROTATION_0
                 }
+
+                videoCapture.targetRotation = rotation
             }
         }
     }
@@ -106,6 +110,7 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         cameraProvider: ProcessCameraProvider
     ) {
         val cameraLensInfo = HashMap<Int, CameraInfo>()
+        cameraProvider.unbindAll()
         arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT).forEach { lens ->
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lens).build()
             if (cameraProvider.hasCamera(cameraSelector)) {
@@ -117,11 +122,39 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                 }
             }
         }
-        listener?.onInitialised(cameraLensInfo)
+
+        lifecycleOwner.lifecycleScope.launch {
+            val provider = ProcessCameraProvider.getInstance(getContext()).await()
+            provider.unbindAll()
+            for (camSelector in arrayOf(
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            )) {
+                try {
+                    // just get the camera.cameraInfo to query capabilities
+                    // we are not binding anything here.
+                    if (provider.hasCamera(camSelector)) {
+                        val camera = provider.bindToLifecycle(lifecycleOwner, camSelector)
+                        QualitySelector
+                            .getSupportedQualities(camera.cameraInfo)
+                            .filter { quality ->
+                                listOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD)
+                                    .contains(quality)
+                            }.also {
+                                supportedQualities.addAll(it)
+                            }
+                    }
+                } catch (exc: java.lang.Exception) {
+                    Log.e(TAG, "Camera Face $camSelector is not supported")
+                }
+            }
+        }
+
+        listener?.onInitialised(cameraLensInfo, supportedQualities)
     }
 
     /**
-     * Takes a [previewState] argument to determine the camera options
+     * Takes a [previewVideoState] argument to determine the camera options
      *
      * Create a Preview.
      * Create Video Capture use case
@@ -132,11 +165,10 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         previewVideoState: PreviewVideoState,
         cameraPreview: PreviewView = getCameraPreview()
     ): View {
-        getLifeCycleOwner().lifecycleScope.launchWhenResumed {
+        getLifeCycleOwner().lifecycleScope.launch {
             val cameraProvider = cameraProviderFuture.await()
             cameraProvider.unbindAll()
 
-            // Every time the orientation of device changes, update rotation for use cases
             orientationEventListener.enable()
 
             //Select a camera lens
@@ -144,13 +176,24 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                 .requireLensFacing(previewVideoState.cameraLens)
                 .build()
 
+            // create the user required QualitySelector (video resolution): we know this is
+            // supported, a valid qualitySelector will be created.
+            val quality = previewVideoState.quality
+            val qualitySelector = QualitySelector.fromOrderedList(
+                supportedQualities,
+                FallbackStrategy.higherQualityOrLowerThan(quality)
+            )
+
             //Create Preview use case
             val preview: Preview = Preview.Builder()
+                .setTargetAspectRatio(quality.getAspectRatio(quality))
                 .build()
                 .apply { setSurfaceProvider(cameraPreview.surfaceProvider) }
 
             //Create Video Capture use case
-            val recorder = Recorder.Builder().build()
+            val recorder = Recorder.Builder()
+                .setQualitySelector(qualitySelector)
+                .build()
             videoCapture = VideoCapture.withOutput(recorder)
 
             cameraProvider.bindToLifecycle(
@@ -191,6 +234,10 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         activeRecording.stop()
     }
 
+    fun onQualityChanged() {
+        listener?.onQualityChanged(cameraState = CameraState.READY)
+    }
+
     private val videoRecordingListener = Consumer<VideoRecordEvent> { event ->
         when (event) {
             is VideoRecordEvent.Finalize -> if (event.hasError()) {
@@ -206,7 +253,11 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
     }
 
     interface Listener {
-        fun onInitialised(cameraLensInfo: HashMap<Int, CameraInfo>)
+        fun onInitialised(
+            cameraLensInfo: HashMap<Int, CameraInfo>,
+            supportedQualities: List<Quality>
+        )
+        fun onQualityChanged(cameraState: CameraState)
         fun onProgress(progress: Int)
         fun recordingPaused()
         fun recordingCompleted(outputUri: Uri)

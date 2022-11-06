@@ -6,9 +6,11 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.extensions.ExtensionMode
+import androidx.camera.video.Quality
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.video.models.RecordingStatus
 import com.armutyus.cameraxproject.ui.video.models.VideoEffect
 import com.armutyus.cameraxproject.ui.video.models.VideoEvent
@@ -40,13 +42,18 @@ class VideoViewModel constructor(
             VideoEvent.ThumbnailTapped -> onThumbnailTapped()
             VideoEvent.DelayTimerTapped -> onDelayTimerTapped()
             VideoEvent.SettingsTapped -> onSettingsTapped()
+            VideoEvent.SetVideoQuality -> onSetVideoQuality()
 
             VideoEvent.PauseTapped -> onPauseTapped()
             VideoEvent.ResumeTapped -> onResumeTapped()
             VideoEvent.StopTapped -> onStopTapped()
 
             is VideoEvent.RecordTapped -> onRecordTapped(videoEvent.timeMillis)
-            is VideoEvent.CameraInitialized -> onCameraInitialized(videoEvent.cameraLensInfo)
+            is VideoEvent.CameraInitialized -> onCameraInitialized(
+                videoEvent.cameraLensInfo,
+                videoEvent.qualities
+            )
+            is VideoEvent.QualityChanged -> onQualityChanged(videoEvent.cameraState)
             is VideoEvent.SelectCameraExtension -> setExtensionMode(videoEvent.extension)
             is VideoEvent.OnProgress -> onProgress(videoEvent.progress)
             is VideoEvent.RecordingPaused -> onPaused()
@@ -79,6 +86,19 @@ class VideoViewModel constructor(
         }
         if (_videoState.value.lensInfo[lens] != null) {
             _videoState.update { it.copy(lens = lens, flashMode = flashMode) }
+        }
+    }
+
+    private fun onSetVideoQuality() {
+        _videoState.update {
+            when (_videoState.value.quality) {
+                Quality.HIGHEST -> it.copy(quality = Quality.SD, cameraState = CameraState.CHANGED)
+                Quality.SD -> it.copy(quality = Quality.HD, cameraState = CameraState.CHANGED)
+                Quality.HD -> it.copy(quality = Quality.FHD, cameraState = CameraState.CHANGED)
+                Quality.FHD -> it.copy(quality = Quality.UHD, cameraState = CameraState.CHANGED)
+                Quality.UHD -> it.copy(quality = Quality.SD, cameraState = CameraState.CHANGED)
+                else -> it.copy(quality = Quality.HIGHEST)
+            }
         }
     }
 
@@ -165,6 +185,12 @@ class VideoViewModel constructor(
         }
     }
 
+    private fun onQualityChanged(cameraState: CameraState) {
+        _videoState.update {
+            it.copy(cameraState = cameraState)
+        }
+    }
+
     private fun onDelayTimerTapped() {
         _videoState.update {
             when (_videoState.value.delayTimer) {
@@ -182,7 +208,10 @@ class VideoViewModel constructor(
         }
     }
 
-    private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>) {
+    private fun onCameraInitialized(
+        cameraLensInfo: HashMap<Int, CameraInfo>,
+        qualities: List<Quality>
+    ) {
         if (cameraLensInfo.isNotEmpty()) {
             val defaultLens = if (cameraLensInfo[CameraSelector.LENS_FACING_BACK] != null) {
                 CameraSelector.LENS_FACING_BACK
@@ -194,7 +223,8 @@ class VideoViewModel constructor(
             _videoState.update {
                 it.copy(
                     lens = it.lens ?: defaultLens,
-                    lensInfo = cameraLensInfo
+                    lensInfo = cameraLensInfo,
+                    supportedQualities = qualities
                 )
             }
         }

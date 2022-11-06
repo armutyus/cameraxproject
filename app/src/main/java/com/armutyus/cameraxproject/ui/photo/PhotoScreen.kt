@@ -448,6 +448,7 @@ private fun CameraPreview(
                             ),
                             it
                         )
+                    CameraState.CHANGED -> {}
                 }
             }
         )

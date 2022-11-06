@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.camera.core.AspectRatio
+import androidx.camera.video.Quality
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +31,18 @@ fun aspectRatio(width: Int, height: Int): Int {
         return AspectRatio.RATIO_4_3
     }
     return AspectRatio.RATIO_16_9
+}
+
+/**
+ * a helper function to retrieve the aspect ratio from a QualitySelector enum.
+ */
+fun Quality.getAspectRatio(quality: Quality): Int {
+    return when {
+        arrayOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.HIGHEST)
+            .contains(quality) -> AspectRatio.RATIO_16_9
+        (quality == Quality.SD) -> AspectRatio.RATIO_4_3
+        else -> throw UnsupportedOperationException()
+    }
 }
 
 @Composable

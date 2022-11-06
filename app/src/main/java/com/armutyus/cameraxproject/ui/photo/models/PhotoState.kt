@@ -36,5 +36,10 @@ enum class CameraState {
     /**
      * Camera is open and presenting a preview stream.
      */
-    READY
+    READY,
+
+    /**
+     * Some values changed on camera state.
+     */
+    CHANGED
 }

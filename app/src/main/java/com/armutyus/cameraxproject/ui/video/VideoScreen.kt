@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.CameraModesItem
+import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.video.models.PreviewVideoState
 import com.armutyus.cameraxproject.ui.video.models.RecordingStatus
 import com.armutyus.cameraxproject.ui.video.models.VideoEffect
@@ -94,8 +95,20 @@ fun VideoScreen(
 
     val listener = remember(videoViewModel) {
         object : VideoCaptureManager.Listener {
-            override fun onInitialised(cameraLensInfo: HashMap<Int, CameraInfo>) {
-                videoViewModel.onEvent(VideoEvent.CameraInitialized(cameraLensInfo))
+            override fun onInitialised(
+                cameraLensInfo: HashMap<Int, CameraInfo>,
+                supportedQualities: List<Quality>
+            ) {
+                videoViewModel.onEvent(
+                    VideoEvent.CameraInitialized(
+                        cameraLensInfo,
+                        supportedQualities
+                    )
+                )
+            }
+
+            override fun onQualityChanged(cameraState: CameraState) {
+                videoViewModel.onEvent(VideoEvent.QualityChanged(cameraState))
             }
 
             override fun recordingPaused() {
@@ -127,21 +140,22 @@ fun VideoScreen(
         File(it, VIDEO_DIR).apply { mkdirs() }
     }
 
-    val latestCapturedVideo = state.latestVideoUri ?: mediaDir?.listFiles()?.firstOrNull {
+    val latestCapturedVideo = mediaDir?.listFiles()?.firstOrNull {
         it.lastModified() == mediaDir.lastModified()
-    }?.toUri()
+    }?.toUri() ?: state.latestVideoUri
 
     CompositionLocalProvider(LocalVideoCaptureManager provides videoCaptureManager) {
         VideoScreenContent(
             availableExtensions = listOf(ExtensionMode.NONE, VIDEO_MODE),
             extensionMode = state.extensionMode,
             cameraLens = state.lens,
+            cameraState = state.cameraState,
             delayTimer = state.delayTimer,
             torchState = state.torchState,
             hasFlashUnit = state.lensInfo[state.lens]?.hasFlashUnit() ?: false,
             hasDualCamera = state.lensInfo.size > 1,
             videoUri = latestCapturedVideo,
-            quality = Quality.HIGHEST /* TODO add quality selector */,
+            quality = state.quality,
             recordedLength = state.recordedLength,
             recordingStatus = state.recordingStatus,
             rotation = rotation,
@@ -177,6 +191,7 @@ private fun VideoScreenContent(
     availableExtensions: List<Int>,
     extensionMode: Int,
     cameraLens: Int?,
+    cameraState: CameraState,
     delayTimer: Int,
     @TorchState.State torchState: Int,
     hasFlashUnit: Boolean,
@@ -191,7 +206,12 @@ private fun VideoScreenContent(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         cameraLens?.let {
-            CameraPreview(lens = it, torchState = torchState)
+            CameraPreview(
+                cameraState = cameraState,
+                lens = it,
+                torchState = torchState,
+                quality = quality
+            )
             Column(
                 modifier = Modifier.align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.Top,
@@ -206,7 +226,7 @@ private fun VideoScreenContent(
                         quality = quality,
                         onDelayTimerTapped = { onEvent(VideoEvent.DelayTimerTapped) },
                         onFlashTapped = { onEvent(VideoEvent.FlashTapped) },
-                        onQualitySelectorTapped = { /* TODO add quality selector */ }
+                        onQualitySelectorTapped = { onEvent(VideoEvent.SetVideoQuality) }
                     ) {
                         onEvent(VideoEvent.SettingsTapped)
                     }
@@ -292,7 +312,7 @@ internal fun VideoTopControls(
                 onTapped = onFlashTapped
             )
             QualitySelectorIcon(rotation = rotation, quality = quality) {
-                onQualitySelectorTapped
+                onQualitySelectorTapped()
             }
             SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
         }
@@ -452,24 +472,41 @@ fun CaptureModesRow(
 }
 
 @Composable
-private fun CameraPreview(lens: Int, @TorchState.State torchState: Int) {
+private fun CameraPreview(
+    cameraState: CameraState,
+    lens: Int,
+    @TorchState.State torchState: Int,
+    quality: Quality
+) {
     val captureManager = LocalVideoCaptureManager.current
     BoxWithConstraints {
         AndroidView(
             factory = {
                 captureManager.showPreview(
                     PreviewVideoState(
-                        cameraLens = lens,
-                        torchState = torchState
+                        torchState = torchState,
+                        cameraLens = lens
                     )
                 )
             },
             modifier = Modifier.fillMaxSize(),
             update = {
-                captureManager.updatePreview(
-                    PreviewVideoState(cameraLens = lens, torchState = torchState),
-                    it
-                )
+                when (cameraState) {
+                    CameraState.NOT_READY -> {}
+                    CameraState.READY -> {
+                        captureManager.updatePreview(
+                            PreviewVideoState(
+                                torchState = torchState,
+                                quality = quality,
+                                cameraLens = lens
+                            ),
+                            it
+                        )
+                    }
+                    CameraState.CHANGED -> {
+                        captureManager.onQualityChanged()
+                    }
+                }
             }
         )
     }
