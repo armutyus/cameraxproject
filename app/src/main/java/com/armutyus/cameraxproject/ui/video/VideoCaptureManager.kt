@@ -4,16 +4,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.view.OrientationEventListener
-import android.view.Surface
-import android.view.View
-import android.view.ViewGroup
-import androidx.camera.core.CameraInfo
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
-import androidx.camera.core.TorchState
+import android.view.*
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
+import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.compositionLocalOf
 import androidx.concurrent.futures.await
@@ -31,6 +26,7 @@ import com.armutyus.cameraxproject.util.getAspectRatio
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 class VideoCaptureManager private constructor(private val builder: Builder) :
     LifecycleEventObserver {
@@ -110,7 +106,6 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         cameraProvider: ProcessCameraProvider
     ) {
         val cameraLensInfo = HashMap<Int, CameraInfo>()
-        cameraProvider.unbindAll()
         arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT).forEach { lens ->
             val cameraSelector = CameraSelector.Builder().requireLensFacing(lens).build()
             if (cameraProvider.hasCamera(cameraSelector)) {
@@ -149,8 +144,8 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                 }
             }
         }
-
         listener?.onInitialised(cameraLensInfo, supportedQualities)
+        listener?.onVideoStateChanged(cameraState = CameraState.READY)
     }
 
     /**
@@ -165,7 +160,7 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         previewVideoState: PreviewVideoState,
         cameraPreview: PreviewView = getCameraPreview()
     ): View {
-        getLifeCycleOwner().lifecycleScope.launch {
+        getLifeCycleOwner().lifecycleScope.launchWhenCreated {
             val cameraProvider = cameraProviderFuture.await()
             cameraProvider.unbindAll()
 
@@ -176,13 +171,12 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
                 .requireLensFacing(previewVideoState.cameraLens)
                 .build()
 
+            val camera = cameraProvider.bindToLifecycle(getLifeCycleOwner(), cameraSelector)
+
             // create the user required QualitySelector (video resolution): we know this is
             // supported, a valid qualitySelector will be created.
             val quality = previewVideoState.quality
-            val qualitySelector = QualitySelector.fromOrderedList(
-                supportedQualities,
-                FallbackStrategy.higherQualityOrLowerThan(quality)
-            )
+            val qualitySelector = QualitySelector.from(quality)
 
             //Create Preview use case
             val preview: Preview = Preview.Builder()
@@ -204,6 +198,7 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
             ).apply {
                 cameraControl.enableTorch(previewVideoState.torchState == TorchState.ON)
             }
+            setupZoomAndTapToFocus(cameraPreview, camera)
         }
         return cameraPreview
     }
@@ -234,8 +229,8 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
         activeRecording.stop()
     }
 
-    fun onQualityChanged() {
-        listener?.onQualityChanged(cameraState = CameraState.READY)
+    fun videoStateChanged() {
+        listener?.onVideoStateChanged(cameraState = CameraState.READY)
     }
 
     private val videoRecordingListener = Consumer<VideoRecordEvent> { event ->
@@ -257,11 +252,39 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
             cameraLensInfo: HashMap<Int, CameraInfo>,
             supportedQualities: List<Quality>
         )
-        fun onQualityChanged(cameraState: CameraState)
+
+        fun onVideoStateChanged(cameraState: CameraState)
         fun onProgress(progress: Int)
         fun recordingPaused()
         fun recordingCompleted(outputUri: Uri)
         fun onError(throwable: Throwable?)
+    }
+
+    private fun setupZoomAndTapToFocus(cameraView: PreviewView, camera: Camera) {
+        val listener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val currentZoomRatio: Float = camera.cameraInfo.zoomState.value?.zoomRatio ?: 1F
+                val delta = detector.scaleFactor
+                camera.cameraControl.setZoomRatio(currentZoomRatio * delta)
+                return true
+            }
+        }
+
+        val scaleGestureDetector = ScaleGestureDetector(cameraView.context, listener)
+
+        cameraView.setOnTouchListener { _, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                cameraView.performClick()
+                val factory = cameraView.meteringPointFactory
+                val point = factory.createPoint(event.x, event.y)
+                val action = FocusMeteringAction.Builder(point, FocusMeteringAction.FLAG_AF)
+                    .setAutoCancelDuration(5, TimeUnit.SECONDS)
+                    .build()
+                camera.cameraControl.startFocusAndMetering(action)
+            }
+            true
+        }
     }
 
     class Builder(val context: Context) {

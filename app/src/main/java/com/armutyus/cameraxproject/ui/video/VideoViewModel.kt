@@ -53,7 +53,7 @@ class VideoViewModel constructor(
                 videoEvent.cameraLensInfo,
                 videoEvent.qualities
             )
-            is VideoEvent.QualityChanged -> onQualityChanged(videoEvent.cameraState)
+            is VideoEvent.StateChanged -> onStateChanged(videoEvent.cameraState)
             is VideoEvent.SelectCameraExtension -> setExtensionMode(videoEvent.extension)
             is VideoEvent.OnProgress -> onProgress(videoEvent.progress)
             is VideoEvent.RecordingPaused -> onPaused()
@@ -127,6 +127,11 @@ class VideoViewModel constructor(
     }
 
     private fun onRecordTapped(timeMillis: Long) {
+        _videoState.update {
+            it.copy(
+                cameraState = CameraState.NOT_READY
+            )
+        }
         viewModelScope.launch {
             delay(timeMillis)
             try {
@@ -142,6 +147,9 @@ class VideoViewModel constructor(
         if (uri != null && uri.path != null) {
             _videoState.update {
                 it.copy(
+                    cameraState = CameraState.READY,
+                    recordingStatus = RecordingStatus.Idle,
+                    recordedLength = 0,
                     latestVideoUri = uri
                 )
             }
@@ -150,11 +158,13 @@ class VideoViewModel constructor(
             val latestVideoUri = mediaDir?.listFiles()?.lastOrNull()?.toUri() ?: Uri.EMPTY
             _videoState.update {
                 it.copy(
+                    cameraState = CameraState.READY,
+                    recordingStatus = RecordingStatus.Idle,
+                    recordedLength = 0,
                     latestVideoUri = latestVideoUri
                 )
             }
         }
-        _videoState.update { it.copy(recordingStatus = RecordingStatus.Idle, recordedLength = 0) }
     }
 
     private fun onError() {
@@ -185,7 +195,7 @@ class VideoViewModel constructor(
         }
     }
 
-    private fun onQualityChanged(cameraState: CameraState) {
+    private fun onStateChanged(cameraState: CameraState) {
         _videoState.update {
             it.copy(cameraState = cameraState)
         }
@@ -222,6 +232,7 @@ class VideoViewModel constructor(
             }
             _videoState.update {
                 it.copy(
+                    cameraState = CameraState.NOT_READY,
                     lens = it.lens ?: defaultLens,
                     lensInfo = cameraLensInfo,
                     supportedQualities = qualities

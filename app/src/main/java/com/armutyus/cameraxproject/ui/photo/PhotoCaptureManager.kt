@@ -31,7 +31,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class PhotoCaptureManager private constructor(private val builder: Builder) :
-    LifecycleEventObserver {
+    LifecycleEventObserver, ImageAnalysis.Analyzer {
 
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
     private lateinit var imageCapture: ImageCapture
@@ -237,6 +237,8 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                 .setTargetRotation(rotation)
                 .build()
 
+            //imageAnalyzer.setAnalyzer(ContextCompat.getMainExecutor(getContext()), this@PhotoCaptureManager)
+
             cameraProvider.bindToLifecycle(
                 getLifeCycleOwner(),
                 cameraSelector,
@@ -290,6 +292,10 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
                 }
             }
         )
+    }
+
+    override fun analyze(image: ImageProxy) {
+        TODO("Not yet implemented")
     }
 
     private fun setupZoomAndTapToFocus(cameraView: PreviewView, camera: Camera) {
@@ -355,6 +361,7 @@ class PhotoCaptureManager private constructor(private val builder: Builder) :
         fun onSuccess(imageResult: ImageCapture.OutputFileResults)
         fun onError(exception: Exception)
     }
+
 }
 
 val LocalPhotoCaptureManager =

@@ -16,7 +16,7 @@ sealed class VideoEvent {
     data class RecordingEnded(val outputUri: Uri) : VideoEvent()
     data class Error(val throwable: Throwable?) : VideoEvent()
     data class SelectCameraExtension(val extension: Int) : VideoEvent()
-    data class QualityChanged(val cameraState: CameraState) : VideoEvent()
+    data class StateChanged(val cameraState: CameraState) : VideoEvent()
 
     object SetVideoQuality : VideoEvent()
     object FlashTapped : VideoEvent()

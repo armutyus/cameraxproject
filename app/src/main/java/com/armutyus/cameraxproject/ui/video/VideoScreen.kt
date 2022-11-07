@@ -64,7 +64,7 @@ fun VideoScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
     var rotation by remember {
-        mutableStateOf(0)
+        mutableStateOf(Surface.ROTATION_0)
     }
 
     val orientationEventListener by lazy {
@@ -84,7 +84,7 @@ fun VideoScreen(
         }
     }
 
-    DisposableEffect(key1 = "key1") {
+    DisposableEffect(key1 = "key2") {
         orientationEventListener.enable()
         onDispose {
             orientationEventListener.disable()
@@ -107,8 +107,8 @@ fun VideoScreen(
                 )
             }
 
-            override fun onQualityChanged(cameraState: CameraState) {
-                videoViewModel.onEvent(VideoEvent.QualityChanged(cameraState))
+            override fun onVideoStateChanged(cameraState: CameraState) {
+                videoViewModel.onEvent(VideoEvent.StateChanged(cameraState))
             }
 
             override fun recordingPaused() {
@@ -140,9 +140,7 @@ fun VideoScreen(
         File(it, VIDEO_DIR).apply { mkdirs() }
     }
 
-    val latestCapturedVideo = mediaDir?.listFiles()?.firstOrNull {
-        it.lastModified() == mediaDir.lastModified()
-    }?.toUri() ?: state.latestVideoUri
+    val latestCapturedVideo = state.latestVideoUri ?: mediaDir?.listFiles()?.lastOrNull()?.toUri()
 
     CompositionLocalProvider(LocalVideoCaptureManager provides videoCaptureManager) {
         VideoScreenContent(
@@ -210,7 +208,7 @@ private fun VideoScreenContent(
                 cameraState = cameraState,
                 lens = it,
                 torchState = torchState,
-                quality = quality
+                quality = quality,
             )
             Column(
                 modifier = Modifier.align(Alignment.TopCenter),
@@ -476,7 +474,7 @@ private fun CameraPreview(
     cameraState: CameraState,
     lens: Int,
     @TorchState.State torchState: Int,
-    quality: Quality
+    quality: Quality,
 ) {
     val captureManager = LocalVideoCaptureManager.current
     BoxWithConstraints {
@@ -484,6 +482,7 @@ private fun CameraPreview(
             factory = {
                 captureManager.showPreview(
                     PreviewVideoState(
+                        cameraState = cameraState,
                         torchState = torchState,
                         cameraLens = lens
                     )
@@ -496,6 +495,7 @@ private fun CameraPreview(
                     CameraState.READY -> {
                         captureManager.updatePreview(
                             PreviewVideoState(
+                                cameraState = cameraState,
                                 torchState = torchState,
                                 quality = quality,
                                 cameraLens = lens
@@ -504,7 +504,7 @@ private fun CameraPreview(
                         )
                     }
                     CameraState.CHANGED -> {
-                        captureManager.onQualityChanged()
+                        captureManager.videoStateChanged()
                     }
                 }
             }

@@ -58,7 +58,6 @@ fun PhotoScreen(
     onShowMessage: (message: String) -> Unit
 ) {
     val state by photoViewModel.photoState.collectAsState()
-
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
