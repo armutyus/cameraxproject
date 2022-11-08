@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
+import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
             if (modelClass.isAssignableFrom(VideoViewModel::class.java)) {
                 return VideoViewModel(fileManager) as T
             }
+            if (modelClass.isAssignableFrom(GalleryViewModel::class.java)) {
+                return GalleryViewModel(fileManager) as T
+            }
             throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
         }
     }
@@ -57,7 +61,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = GALLERY_ROUTE
                     ) {
                         composable(GALLERY_ROUTE) {
-                            GalleryScreen(navController = navController)
+                            GalleryScreen(navController = navController, factory = viewModelFactory)
                         }
                         composable(PHOTO_ROUTE) {
                             PhotoScreen(navController = navController, factory = viewModelFactory) {
