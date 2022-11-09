@@ -1,6 +1,5 @@
 package com.armutyus.cameraxproject.ui.gallery
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,31 +16,44 @@ import kotlinx.coroutines.launch
 
 class GalleryViewModel constructor(private val fileManager: FileManager) : ViewModel() {
 
-    var isLoading = mutableStateOf(false)
+    private val _mediaItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val mediaItem: StateFlow<Map<String, List<MediaItem>>> = _mediaItem
 
-    private val _mediaItem = MutableStateFlow(setOf<MediaItem>())
-    val mediaItem: StateFlow<Set<MediaItem>> = _mediaItem
+    private val _photoItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val photoItem: StateFlow<Map<String, List<MediaItem>>> = _photoItem
+
+    private val _videoItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val videoItem: StateFlow<Map<String, List<MediaItem>>> = _videoItem
 
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
 
+
     fun loadMedia() {
-        isLoading.value = true
         viewModelScope.launch {
+            val media = mutableListOf<MediaItem>()
+
             val photoDir = fileManager.getPrivateFileDirectory(PHOTO_DIR)
-            val photos = photoDir?.listFiles()?.mapIndexed { index, file ->
-                MediaItem(file.lastModified(), file.toUri(), MediaItem.Type.PHOTO)
-            } as List<MediaItem>
+            val photos = photoDir?.listFiles()?.mapIndexed { _, file ->
+                val takenTime = file.name.substring(0, 10).replace("-", "/")
+                MediaItem(takenTime, file.toUri(), MediaItem.Type.PHOTO)
+            }?.sortedByDescending { it.takenTime } as List<MediaItem>
 
             val videoDir = fileManager.getPrivateFileDirectory(VIDEO_DIR)
-            val videos = videoDir?.listFiles()?.mapIndexed { index, file ->
-                MediaItem(file.lastModified(), file.toUri(), MediaItem.Type.VIDEO)
-            } as List<MediaItem>
+            val videos = videoDir?.listFiles()?.mapIndexed { _, file ->
+                val takenTime = file.name.substring(0, 10).replace("-", "/")
+                MediaItem(takenTime, file.toUri(), MediaItem.Type.VIDEO)
+            }?.sortedByDescending { it.takenTime } as List<MediaItem>
 
-            isLoading.value = false
+            media.addAll(photos + videos)
 
-            _mediaItem.value += photos
-            _mediaItem.value += videos
+            val groupedMedia = media.groupBy { it.takenTime }
+            val groupedPhotos = photos.groupBy { it.takenTime }
+            val groupedVideos = videos.groupBy { it.takenTime }
+
+            _mediaItem.value += groupedMedia
+            _photoItem.value += groupedPhotos
+            _videoItem.value += groupedVideos
         }
     }
 }

@@ -8,6 +8,8 @@
     <string name="deny">Deny</string>
     <string name="open_camera">Open Camera</string>
     <string name="gallery">Gallery</string>
+    <string name="photos">Photos</string>
+    <string name="videos">Videos</string>
     <string name="gallery_items">Photos and Videos</string>
     <string name="unknown_viewmodel">Unknown ViewModel class</string>
     <string name="change_flash_settings">Change flash settings</string>
