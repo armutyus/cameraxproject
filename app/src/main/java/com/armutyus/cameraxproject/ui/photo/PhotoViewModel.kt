@@ -17,7 +17,7 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
-import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_PREVIEW_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.PREVIEW_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S
@@ -42,8 +42,8 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
             PhotoEvent.FlashTapped -> onFlashTapped()
             PhotoEvent.FlipTapped -> onFlipTapped()
             PhotoEvent.SettingsTapped -> onSettingsTapped()
-            PhotoEvent.ThumbnailTapped -> onThumbnailTapped()
 
+            is PhotoEvent.ThumbnailTapped -> onThumbnailTapped(photoEvent.uri)
             is PhotoEvent.CaptureTapped -> onCaptureTapped(photoEvent.timeMillis)
             is PhotoEvent.CameraInitialized -> onCameraInitialized(photoEvent.cameraLensInfo)
             is PhotoEvent.ExtensionModeChanged -> onExtensionModeChanged(photoEvent.availableExtensions)
@@ -126,9 +126,9 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         }
     }
 
-    private fun onThumbnailTapped() {
+    private fun onThumbnailTapped(uri: Uri?) {
         viewModelScope.launch {
-            _photoEffect.emit(PhotoEffect.NavigateTo(PHOTO_PREVIEW_ROUTE))
+            _photoEffect.emit(PhotoEffect.NavigateTo("preview_screen/${uri?.toString()}"))
         }
     }
 

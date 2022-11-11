@@ -9,11 +9,14 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
@@ -25,6 +28,7 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Permissions
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.PREVIEW_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -36,15 +40,12 @@ class MainActivity : ComponentActivity() {
 
     private val viewModelFactory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(PhotoViewModel::class.java)) {
+            if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                 return PhotoViewModel(fileManager) as T
-            }
-            if (modelClass.isAssignableFrom(VideoViewModel::class.java)) {
+            if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                 return VideoViewModel(fileManager) as T
-            }
-            if (modelClass.isAssignableFrom(GalleryViewModel::class.java)) {
+            if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
                 return GalleryViewModel(fileManager) as T
-            }
             throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
         }
     }
@@ -61,7 +62,12 @@ class MainActivity : ComponentActivity() {
                         startDestination = GALLERY_ROUTE
                     ) {
                         composable(GALLERY_ROUTE) {
-                            GalleryScreen(navController = navController, factory = viewModelFactory)
+                            GalleryScreen(
+                                navController = navController,
+                                factory = viewModelFactory,
+                            ) {
+                                showMessage(this@MainActivity, it)
+                            }
                         }
                         composable(PHOTO_ROUTE) {
                             PhotoScreen(navController = navController, factory = viewModelFactory) {
@@ -72,6 +78,17 @@ class MainActivity : ComponentActivity() {
                             VideoScreen(navController = navController, factory = viewModelFactory) {
                                 showMessage(this@MainActivity, it)
                             }
+                        }
+                        composable(
+                            route = "preview_screen/{filePath}",
+                            arguments = listOf(
+                                navArgument("filePath") {
+                                type = NavType.StringType
+                                }
+                            )
+                        ) {
+                            val filePath = remember { it.arguments?.getString("filePath") }
+                            //PreviewScreen(filePath = filePath, navController = navController)
                         }
                         composable(SETTINGS_ROUTE) {
                             //SettingsScreen(navController = navController)

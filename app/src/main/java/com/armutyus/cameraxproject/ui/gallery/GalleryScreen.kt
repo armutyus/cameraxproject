@@ -1,9 +1,8 @@
 package com.armutyus.cameraxproject.ui.gallery
 
 import android.content.Context
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import android.net.Uri
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,7 +27,7 @@ import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.VideoFrameDecoder
 import com.armutyus.cameraxproject.R
-import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
+import com.armutyus.cameraxproject.ui.gallery.models.*
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 
@@ -38,21 +37,32 @@ fun GalleryScreen(
     navController: NavController,
     factory: ViewModelProvider.Factory,
     galleryViewModel: GalleryViewModel = viewModel(factory = factory),
+    onShowMessage: (message: String) -> Unit
 ) {
-    val media by galleryViewModel.mediaItem.collectAsState()
-    val groupedPhotos by galleryViewModel.photoItem.collectAsState()
-    val groupedVideos by galleryViewModel.videoItem.collectAsState()
+    val state by galleryViewModel.galleryState.collectAsState()
+    val media by galleryViewModel.mediaItems.collectAsState()
+    val groupedPhotos by galleryViewModel.photoItems.collectAsState()
+    val groupedVideos by galleryViewModel.videoItems.collectAsState()
+    val selectedItems by galleryViewModel.selectedItems.collectAsState()
     val context = LocalContext.current
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
+    val bottomNavItems = listOf(
+        BottomNavItem.Gallery,
+        BottomNavItem.Photos,
+        BottomNavItem.Videos
+    )
+    val selectableModeItems = listOf(
+        SelectableModeItem.Cancel,
+        SelectableModeItem.Delete,
+        SelectableModeItem.Share
+    )
 
     LaunchedEffect(galleryViewModel) {
         galleryViewModel.loadMedia()
-    }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
+        galleryViewModel.galleryEffect.collect {
+            when (it) {
+                is GalleryEffect.NavigateTo -> {
                     navController.navigate(PHOTO_ROUTE) {
                         // Pop up to the start destination of the graph to
                         // avoid building up a large stack of destinations
@@ -66,6 +76,17 @@ fun GalleryScreen(
                         // Restore state when reselecting a previously selected item
                         restoreState = true
                     }
+                }
+                is GalleryEffect.ShowMessage -> onShowMessage(it.message)
+            }
+        }
+    }
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    galleryViewModel.onEvent(GalleryEvent.FabClicked)
                 }) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -75,48 +96,53 @@ fun GalleryScreen(
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(
-                    selected = filterContent == MediaItem.Filter.ALL,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Sharp.LibraryBooks,
-                            contentDescription = stringResource(id = R.string.gallery_items)
-                        )
-                           },
-                    label = {
-                            Text(text = stringResource(id = R.string.gallery))
+                if (!state.selectableMode) {
+                    bottomNavItems.forEach { bottomNavItem ->
+                        NavigationBarItem(
+                            selected = filterContent == bottomNavItem.filter,
+                            icon = {
+                                Icon(
+                                    imageVector = bottomNavItem.icon,
+                                    contentDescription = stringResource(id = bottomNavItem.label)
+                                )
                             },
-                    alwaysShowLabel = false,
-                    onClick = { filterContent = MediaItem.Filter.ALL }
-                )
-                NavigationBarItem(
-                    selected = filterContent == MediaItem.Filter.PHOTOS,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Sharp.PhotoLibrary,
-                            contentDescription = stringResource(id = R.string.photos)
+                            label = {
+                                Text(text = stringResource(id = bottomNavItem.label))
+                            },
+                            alwaysShowLabel = false,
+                            onClick = { filterContent = bottomNavItem.filter!! }
                         )
-                    },
-                    label = {
-                        Text(text = stringResource(id = R.string.photos))
-                    },
-                    alwaysShowLabel = false,
-                    onClick = { filterContent = MediaItem.Filter.PHOTOS }
-                )
-                NavigationBarItem(
-                    selected = filterContent == MediaItem.Filter.VIDEOS,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Sharp.VideoLibrary,
-                            contentDescription = stringResource(id = R.string.videos)
+                    }
+                } else {
+                    selectableModeItems.forEach { selectableModeItem ->
+                        NavigationBarItem(
+                            selected = false,
+                            icon = {
+                                Icon(
+                                    imageVector = selectableModeItem.icon,
+                                    contentDescription = stringResource(id = selectableModeItem.label)
+                                )
+                            },
+                            label = {
+                                Text(text = stringResource(id = selectableModeItem.label))
+                            },
+                            alwaysShowLabel = true,
+                            onClick = {
+                                when (selectableModeItem) {
+                                    SelectableModeItem.Cancel -> {
+                                        galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode)
+                                    }
+                                    SelectableModeItem.Delete -> {
+                                        galleryViewModel.onEvent(GalleryEvent.DeleteTapped)
+                                    }
+                                    SelectableModeItem.Share -> {
+                                        galleryViewModel.onEvent(GalleryEvent.ShareTapped)
+                                    }
+                                }
+                            }
                         )
-                    },
-                    label = {
-                        Text(text = stringResource(id = R.string.videos))
-                    },
-                    alwaysShowLabel = false,
-                    onClick = { filterContent = MediaItem.Filter.VIDEOS }
-                )
+                    }
+                }
             }
         }
     ) {
@@ -125,23 +151,28 @@ fun GalleryScreen(
                 .fillMaxSize()
                 .padding(it)
         ) {
-            GalleryContent(
+            GalleryScreenContent(
                 context = context,
                 groupedMedia = media,
                 groupedPhotos = groupedPhotos,
                 groupedVideos = groupedVideos,
-                filterContent = filterContent)
+                selectableMode = state.selectableMode,
+                onEvent = galleryViewModel::onEvent,
+                filterContent = filterContent
+            )
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GalleryContent(
+fun GalleryScreenContent(
     context: Context,
     groupedMedia: Map<String, List<MediaItem>>,
     groupedPhotos: Map<String, List<MediaItem>>,
     groupedVideos: Map<String, List<MediaItem>>,
+    selectableMode: Boolean,
+    onEvent: (GalleryEvent) -> Unit,
     filterContent: MediaItem.Filter
 ) {
     val numberOfItemsByRow = LocalConfiguration.current.screenWidthDp / 96
@@ -151,8 +182,11 @@ fun GalleryContent(
                 groupedMedia.forEach { (takenTime, mediaForTakenTime) ->
                     stickyHeader {
                         Text(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(color = MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            text = takenTime,
                         )
                     }
                     items(items = mediaForTakenTime.chunked(numberOfItemsByRow)) { mediaList ->
@@ -162,7 +196,15 @@ fun GalleryContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             for (media in mediaList) {
-                                MediaItemBox(item = media, context = context)
+                                MediaItemBox(
+                                    item = media,
+                                    context = context,
+                                    selectableMode = selectableMode,
+                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
+                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
+                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
+                                )
                             }
                         }
                     }
@@ -172,8 +214,11 @@ fun GalleryContent(
                 groupedPhotos.forEach { (takenTime, photosForTakenTime) ->
                     stickyHeader {
                         Text(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(color = MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            text = takenTime,
                         )
                     }
                     items(items = photosForTakenTime.chunked(numberOfItemsByRow)) { photos ->
@@ -183,7 +228,15 @@ fun GalleryContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             for (item in photos) {
-                                MediaItemBox(item = item, context = context)
+                                MediaItemBox(
+                                    item = item,
+                                    context = context,
+                                    selectableMode = selectableMode,
+                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
+                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
+                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
+                                )
                             }
                         }
                     }
@@ -193,8 +246,11 @@ fun GalleryContent(
                 groupedVideos.forEach { (takenTime, videosForTakenTime) ->
                     stickyHeader {
                         Text(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(color = MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            text = takenTime,
                         )
                     }
                     items(items = videosForTakenTime.chunked(numberOfItemsByRow)) { videos ->
@@ -204,7 +260,15 @@ fun GalleryContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             for (item in videos) {
-                                MediaItemBox(item = item, context = context)
+                                MediaItemBox(
+                                    item = item,
+                                    context = context,
+                                    selectableMode = selectableMode,
+                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it))},
+                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it))},
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
+                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
+                                )
                             }
                         }
                     }
@@ -214,8 +278,18 @@ fun GalleryContent(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MediaItemBox(item: MediaItem, context: Context) {
+fun MediaItemBox(
+    item: MediaItem,
+    context: Context,
+    selectableMode: Boolean,
+    onItemChecked: (item: MediaItem) -> Unit,
+    onItemUnchecked: (item: MediaItem) -> Unit,
+    onItemClicked: (uri: Uri?) -> Unit,
+    onItemLongClicked: () -> Unit
+) {
+    var checked by remember { mutableStateOf(false) }
     val imageLoader = ImageLoader.Builder(context)
         .components {
             add(VideoFrameDecoder.Factory())
@@ -237,6 +311,10 @@ fun MediaItemBox(item: MediaItem, context: Context) {
         modifier = Modifier
             .height(96.dp)
             .width(96.dp)
+            .combinedClickable(
+                onLongClick = { onItemLongClicked() },
+                onClick = { onItemClicked(item.uri) }
+            )
     ) {
         Image(
             modifier = Modifier
@@ -260,6 +338,22 @@ fun MediaItemBox(item: MediaItem, context: Context) {
                     .align(Alignment.Center)
                     .padding(4.dp),
                 tint = MaterialTheme.colorScheme.inverseSurface
+            )
+        }
+        if (selectableMode) {
+            Checkbox(
+                modifier = Modifier
+                    .offset(x = 5.dp, y = (-10).dp)
+                    .align(Alignment.TopEnd),
+                checked = checked,
+                onCheckedChange = {
+                    checked = it
+                    if (it) {
+                        onItemChecked(item)
+                    } else {
+                        onItemUnchecked(item)
+                    }
+                }
             )
         }
     }

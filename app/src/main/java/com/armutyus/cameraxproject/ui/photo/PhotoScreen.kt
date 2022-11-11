@@ -237,7 +237,7 @@ private fun PhotoScreenContent(
                             )
                         )
                     }
-                ) { onEvent(PhotoEvent.ThumbnailTapped) }
+                ) { onEvent(PhotoEvent.ThumbnailTapped(imageUri ?: Uri.EMPTY)) }
             }
         }
     }

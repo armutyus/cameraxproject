@@ -1,32 +1,54 @@
 package com.armutyus.cameraxproject.ui.gallery
 
+import android.net.Uri
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEffect
+import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
+import com.armutyus.cameraxproject.ui.gallery.models.GalleryState
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_DIR
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class GalleryViewModel constructor(private val fileManager: FileManager) : ViewModel() {
 
-    private val _mediaItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val mediaItem: StateFlow<Map<String, List<MediaItem>>> = _mediaItem
+    private val _galleryState = MutableStateFlow(GalleryState())
+    val galleryState: StateFlow<GalleryState> = _galleryState
 
-    private val _photoItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val photoItem: StateFlow<Map<String, List<MediaItem>>> = _photoItem
+    private val _mediaItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val mediaItems: StateFlow<Map<String, List<MediaItem>>> = _mediaItems
 
-    private val _videoItem = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val videoItem: StateFlow<Map<String, List<MediaItem>>> = _videoItem
+    private val _photoItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val photoItems: StateFlow<Map<String, List<MediaItem>>> = _photoItems
+
+    private val _videoItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
+    val videoItems: StateFlow<Map<String, List<MediaItem>>> = _videoItems
+
+    private val _selectedItems = MutableStateFlow(mutableListOf<MediaItem>())
+    val selectedItems: StateFlow<List<MediaItem>> = _selectedItems
 
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
+
+    fun onEvent(galleryEvent: GalleryEvent) {
+        when (galleryEvent) {
+            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.uri)
+            is GalleryEvent.ItemChecked -> onItemChecked(galleryEvent.item)
+            is GalleryEvent.ItemUnchecked -> onItemUnchecked(galleryEvent.item)
+
+            GalleryEvent.FabClicked -> onFabClicked()
+            GalleryEvent.ItemLongClicked -> onItemLongClicked()
+            GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
+            GalleryEvent.DeleteTapped -> deleteSelectedItems()
+            GalleryEvent.ShareTapped -> onShareTapped()
+        }
+    }
 
 
     fun loadMedia() {
@@ -47,13 +69,68 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
             media.addAll(photos + videos)
 
-            val groupedMedia = media.groupBy { it.takenTime }
+            val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
             val groupedPhotos = photos.groupBy { it.takenTime }
             val groupedVideos = videos.groupBy { it.takenTime }
 
-            _mediaItem.value += groupedMedia
-            _photoItem.value += groupedPhotos
-            _videoItem.value += groupedVideos
+            _mediaItems.value += groupedMedia
+            _photoItems.value += groupedPhotos
+            _videoItems.value += groupedVideos
+        }
+    }
+
+    private fun onFabClicked() {
+        cancelSelectableMode()
+        viewModelScope.launch {
+            _galleryEffect.emit(GalleryEffect.NavigateTo(PHOTO_ROUTE))
+        }
+    }
+
+    private fun onItemClicked(uri: Uri?) {
+        viewModelScope.launch {
+            _galleryEffect.emit(GalleryEffect.NavigateTo("preview_screen/${uri?.toString()}"))
+        }
+    }
+
+    private fun onItemLongClicked() {
+        _galleryState.update {
+            it.copy(
+                selectableMode = true
+            )
+        }
+    }
+
+    private fun cancelSelectableMode() {
+        _galleryState.update {
+            it.copy(
+                selectableMode = false
+            )
+        }
+    }
+
+    private fun onItemChecked(item: MediaItem) {
+        viewModelScope.launch {
+            _selectedItems.value.add(item)
+        }
+    }
+
+    private fun onItemUnchecked(item: MediaItem) {
+        viewModelScope.launch {
+            _selectedItems.value.remove(item)
+        }
+    }
+
+    private fun onShareTapped() {
+        //share selected items to other apps
+    }
+
+    private fun deleteSelectedItems() {
+        viewModelScope.launch {
+            _selectedItems.value.forEach {
+                it.uri?.toFile()?.delete()
+            }
+            cancelSelectableMode()
+            loadMedia()
         }
     }
 }

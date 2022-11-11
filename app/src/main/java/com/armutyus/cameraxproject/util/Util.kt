@@ -27,7 +27,7 @@ class Util {
 
         const val GALLERY_ROUTE = "gallery_screen"
         const val PHOTO_ROUTE = "photo_screen"
-        const val PHOTO_PREVIEW_ROUTE = "photo_preview_screen"
+        const val PREVIEW_ROUTE = "preview_screen/{filePath}"
         const val SETTINGS_ROUTE = "settings_screen"
         const val VIDEO_ROUTE = "video_screen"
 
