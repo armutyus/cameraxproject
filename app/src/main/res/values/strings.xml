@@ -13,6 +13,8 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="share">Share</string>
+    <string name="select">SELECT</string>
+    <string name="select_all">Select All</string>
     <string name="gallery_items">Photos and Videos</string>
     <string name="unknown_viewmodel">Unknown ViewModel class</string>
     <string name="change_flash_settings">Change flash settings</string>

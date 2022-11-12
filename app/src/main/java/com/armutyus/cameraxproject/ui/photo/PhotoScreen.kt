@@ -145,9 +145,7 @@ fun PhotoScreen(
         File(it, PHOTO_DIR).apply { mkdirs() }
     }
 
-    val latestCapturedPhoto = state.latestImageUri ?: mediaDir?.listFiles()?.firstOrNull {
-        it.lastModified() == mediaDir.lastModified()
-    }?.toUri()
+    val latestCapturedPhoto = state.latestImageUri ?: mediaDir?.listFiles()?.lastOrNull()?.toUri()
 
     CompositionLocalProvider(LocalPhotoCaptureManager provides photoCaptureManager) {
         PhotoScreenContent(

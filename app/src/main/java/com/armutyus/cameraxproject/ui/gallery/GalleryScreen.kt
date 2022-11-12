@@ -29,7 +29,6 @@ import coil.decode.VideoFrameDecoder
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.*
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
-import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +62,7 @@ fun GalleryScreen(
         galleryViewModel.galleryEffect.collect {
             when (it) {
                 is GalleryEffect.NavigateTo -> {
-                    navController.navigate(PHOTO_ROUTE) {
+                    navController.navigate(it.route) {
                         // Pop up to the start destination of the graph to
                         // avoid building up a large stack of destinations
                         // on the back stack as users select items
@@ -83,6 +82,20 @@ fun GalleryScreen(
     }
 
     Scaffold(
+        topBar = {
+            if (state.selectableMode)
+                TopAppBar(
+                    title = { Text(text = stringResource(id = R.string.select)) },
+                    actions = {
+                        Icon(
+                            imageVector = Icons.Sharp.Checklist,
+                            modifier = Modifier
+                                .clickable { galleryViewModel.onEvent(GalleryEvent.SelectAllClicked) },
+                            contentDescription = stringResource(id = R.string.select_all)
+                        )
+                    }
+                )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -189,7 +202,9 @@ fun GalleryScreenContent(
                             text = takenTime,
                         )
                     }
-                    items(items = mediaForTakenTime.chunked(numberOfItemsByRow)) { mediaList ->
+                    items(
+                        items = mediaForTakenTime.chunked(numberOfItemsByRow)
+                    ) { mediaList ->
                         Row(
                             modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(1.dp),
@@ -202,9 +217,8 @@ fun GalleryScreenContent(
                                     selectableMode = selectableMode,
                                     onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
                                     onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
-                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
-                                )
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
                     }
@@ -221,7 +235,9 @@ fun GalleryScreenContent(
                             text = takenTime,
                         )
                     }
-                    items(items = photosForTakenTime.chunked(numberOfItemsByRow)) { photos ->
+                    items(
+                        items = photosForTakenTime.chunked(numberOfItemsByRow)
+                    ) { photos ->
                         Row(
                             modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(1.dp),
@@ -234,9 +250,8 @@ fun GalleryScreenContent(
                                     selectableMode = selectableMode,
                                     onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
                                     onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
-                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
-                                )
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
                     }
@@ -253,7 +268,9 @@ fun GalleryScreenContent(
                             text = takenTime,
                         )
                     }
-                    items(items = videosForTakenTime.chunked(numberOfItemsByRow)) { videos ->
+                    items(
+                        items = videosForTakenTime.chunked(numberOfItemsByRow)
+                    ) { videos ->
                         Row(
                             modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
                             horizontalArrangement = Arrangement.spacedBy(1.dp),
@@ -264,11 +281,10 @@ fun GalleryScreenContent(
                                     item = item,
                                     context = context,
                                     selectableMode = selectableMode,
-                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it))},
-                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it))},
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) },
-                                    onItemLongClicked = { onEvent(GalleryEvent.ItemLongClicked) }
-                                )
+                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
+                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
+                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
                     }
@@ -289,7 +305,8 @@ fun MediaItemBox(
     onItemClicked: (uri: Uri?) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
-    var checked by remember { mutableStateOf(false) }
+    var checked by remember { mutableStateOf(item.selected) }
+
     val imageLoader = ImageLoader.Builder(context)
         .components {
             add(VideoFrameDecoder.Factory())

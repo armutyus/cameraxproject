@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEffect
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
-import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryState
+import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
@@ -43,13 +43,13 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             is GalleryEvent.ItemUnchecked -> onItemUnchecked(galleryEvent.item)
 
             GalleryEvent.FabClicked -> onFabClicked()
+            GalleryEvent.SelectAllClicked -> onSelectAllClicked()
             GalleryEvent.ItemLongClicked -> onItemLongClicked()
             GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
             GalleryEvent.DeleteTapped -> deleteSelectedItems()
             GalleryEvent.ShareTapped -> onShareTapped()
         }
     }
-
 
     fun loadMedia() {
         viewModelScope.launch {
@@ -58,20 +58,30 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             val photoDir = fileManager.getPrivateFileDirectory(PHOTO_DIR)
             val photos = photoDir?.listFiles()?.mapIndexed { _, file ->
                 val takenTime = file.name.substring(0, 10).replace("-", "/")
-                MediaItem(takenTime, file.toUri(), MediaItem.Type.PHOTO)
-            }?.sortedByDescending { it.takenTime } as List<MediaItem>
+                MediaItem(
+                    takenTime,
+                    name = file.name,
+                    uri = file.toUri(),
+                    type = MediaItem.Type.PHOTO
+                )
+            } as List<MediaItem>
 
             val videoDir = fileManager.getPrivateFileDirectory(VIDEO_DIR)
             val videos = videoDir?.listFiles()?.mapIndexed { _, file ->
                 val takenTime = file.name.substring(0, 10).replace("-", "/")
-                MediaItem(takenTime, file.toUri(), MediaItem.Type.VIDEO)
-            }?.sortedByDescending { it.takenTime } as List<MediaItem>
+                MediaItem(
+                    takenTime,
+                    name = file.name,
+                    uri = file.toUri(),
+                    type = MediaItem.Type.VIDEO
+                )
+            } as List<MediaItem>
 
             media.addAll(photos + videos)
 
             val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
-            val groupedPhotos = photos.groupBy { it.takenTime }
-            val groupedVideos = videos.groupBy { it.takenTime }
+            val groupedPhotos = photos.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
+            val groupedVideos = videos.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
 
             _mediaItems.value += groupedMedia
             _photoItems.value += groupedPhotos
@@ -86,7 +96,12 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         }
     }
 
+    private fun onSelectAllClicked() {
+        //handle item.selected update
+    }
+
     private fun onItemClicked(uri: Uri?) {
+        cancelSelectableMode()
         viewModelScope.launch {
             _galleryEffect.emit(GalleryEffect.NavigateTo("preview_screen/${uri?.toString()}"))
         }
@@ -111,12 +126,14 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private fun onItemChecked(item: MediaItem) {
         viewModelScope.launch {
             _selectedItems.value.add(item)
+            item.selected = true
         }
     }
 
     private fun onItemUnchecked(item: MediaItem) {
         viewModelScope.launch {
             _selectedItems.value.remove(item)
+            item.selected = false
         }
     }
 

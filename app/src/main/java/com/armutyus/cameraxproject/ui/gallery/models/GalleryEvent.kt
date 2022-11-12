@@ -13,5 +13,6 @@ sealed class GalleryEvent {
     object ShareTapped : GalleryEvent()
     object ItemLongClicked : GalleryEvent()
     object FabClicked : GalleryEvent()
+    object SelectAllClicked : GalleryEvent()
 
 }

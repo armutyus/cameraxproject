@@ -17,7 +17,6 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
-import com.armutyus.cameraxproject.util.Util.Companion.PREVIEW_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.TIMER_10S

@@ -28,7 +28,6 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Permissions
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
-import com.armutyus.cameraxproject.util.Util.Companion.PREVIEW_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -83,7 +82,7 @@ class MainActivity : ComponentActivity() {
                             route = "preview_screen/{filePath}",
                             arguments = listOf(
                                 navArgument("filePath") {
-                                type = NavType.StringType
+                                    type = NavType.StringType
                                 }
                             )
                         ) {
