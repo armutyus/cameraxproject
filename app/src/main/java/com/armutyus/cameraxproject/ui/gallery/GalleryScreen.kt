@@ -85,11 +85,20 @@ fun GalleryScreen(
         topBar = {
             if (state.selectableMode)
                 TopAppBar(
+                    navigationIcon = {
+                                     IconButton(onClick = { galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode) }) {
+                                         Icon(
+                                             imageVector = Icons.Sharp.ArrowBack,
+                                             contentDescription = stringResource(id = R.string.cancel)
+                                         )
+                                     }
+                    },
                     title = { Text(text = stringResource(id = R.string.select)) },
                     actions = {
                         Icon(
                             imageVector = Icons.Sharp.Checklist,
                             modifier = Modifier
+                                .padding(horizontal = 32.dp)
                                 .clickable { galleryViewModel.onEvent(GalleryEvent.SelectAllClicked) },
                             contentDescription = stringResource(id = R.string.select_all)
                         )

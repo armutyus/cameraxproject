@@ -103,7 +103,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private fun onItemClicked(uri: Uri?) {
         cancelSelectableMode()
         viewModelScope.launch {
-            _galleryEffect.emit(GalleryEffect.NavigateTo("preview_screen/${uri?.toString()}"))
+            _galleryEffect.emit(GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}"))
         }
     }
 

@@ -21,6 +21,8 @@ import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
+import com.armutyus.cameraxproject.ui.preview.PreviewScreen
+import com.armutyus.cameraxproject.ui.preview.PreviewViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 import com.armutyus.cameraxproject.ui.video.VideoScreen
 import com.armutyus.cameraxproject.ui.video.VideoViewModel
@@ -37,10 +39,13 @@ class MainActivity : ComponentActivity() {
 
     private val fileManager = FileManager(this)
 
+    @Suppress("UNCHECKED_CAST")
     private val viewModelFactory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                 return PhotoViewModel(fileManager) as T
+            if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
+                return PreviewViewModel() as T
             if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                 return VideoViewModel(fileManager) as T
             if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
@@ -69,25 +74,34 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(PHOTO_ROUTE) {
-                            PhotoScreen(navController = navController, factory = viewModelFactory) {
+                            PhotoScreen(
+                                navController = navController,
+                                factory = viewModelFactory
+                            ) {
                                 showMessage(this@MainActivity, it)
                             }
                         }
                         composable(VIDEO_ROUTE) {
-                            VideoScreen(navController = navController, factory = viewModelFactory) {
+                            VideoScreen(
+                                navController = navController,
+                                factory = viewModelFactory
+                            ) {
                                 showMessage(this@MainActivity, it)
                             }
                         }
                         composable(
-                            route = "preview_screen/{filePath}",
+                            route = "preview_screen/?filePath={filePath}",
                             arguments = listOf(
                                 navArgument("filePath") {
                                     type = NavType.StringType
+                                    defaultValue = ""
                                 }
                             )
                         ) {
                             val filePath = remember { it.arguments?.getString("filePath") }
-                            //PreviewScreen(filePath = filePath, navController = navController)
+                            PreviewScreen(filePath = filePath ?: "", navController = navController, factory = viewModelFactory) {
+                                showMessage(this@MainActivity, it)
+                            }
                         }
                         composable(SETTINGS_ROUTE) {
                             //SettingsScreen(navController = navController)
