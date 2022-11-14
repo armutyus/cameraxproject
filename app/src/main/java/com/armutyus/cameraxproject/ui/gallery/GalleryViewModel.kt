@@ -1,10 +1,16 @@
 package com.armutyus.cameraxproject.ui.gallery
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEffect
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryState
@@ -38,16 +44,16 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
-            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.uri)
+            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item)
             is GalleryEvent.ItemChecked -> onItemChecked(galleryEvent.item)
             is GalleryEvent.ItemUnchecked -> onItemUnchecked(galleryEvent.item)
+            is GalleryEvent.ShareTapped -> onShareTapped(galleryEvent.context)
 
             GalleryEvent.FabClicked -> onFabClicked()
             GalleryEvent.SelectAllClicked -> onSelectAllClicked()
             GalleryEvent.ItemLongClicked -> onItemLongClicked()
             GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
             GalleryEvent.DeleteTapped -> deleteSelectedItems()
-            GalleryEvent.ShareTapped -> onShareTapped()
         }
     }
 
@@ -100,10 +106,14 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         //handle item.selected update
     }
 
-    private fun onItemClicked(uri: Uri?) {
+    private fun onItemClicked(item: MediaItem?) {
         cancelSelectableMode()
+        val uri = item?.uri
+        val type = if (item?.type == MediaItem.Type.PHOTO) "photo" else "video"
         viewModelScope.launch {
-            _galleryEffect.emit(GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}"))
+            _galleryEffect.emit(
+                GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+            )
         }
     }
 
@@ -137,8 +147,39 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         }
     }
 
-    private fun onShareTapped() {
-        //share selected items to other apps
+    private fun onShareTapped(context: Context) {
+        viewModelScope.launch {
+            if (_selectedItems.value.isNotEmpty()) {
+                val uriList = ArrayList<Uri>()
+                _selectedItems.value.forEach {
+                    val contentUri = FileProvider.getUriForFile(
+                        context,
+                        "com.armutyus.cameraxproject.fileprovider",
+                        it.uri?.toFile()!!
+                    )
+                    uriList.add(contentUri)
+                }
+                val shareIntent: Intent = Intent().apply {
+                    action = Intent.ACTION_SEND_MULTIPLE
+                    type = "*/*"
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriList)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                }
+                try {
+                    context.startActivity(
+                        Intent.createChooser(
+                            shareIntent,
+                            context.getString(R.string.share)
+                        )
+                    )
+                    uriList.clear()
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(context, R.string.no_app_available, Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, R.string.choose_media, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun deleteSelectedItems() {

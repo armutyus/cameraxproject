@@ -19,10 +19,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
+import com.armutyus.cameraxproject.ui.gallery.preview.PreviewScreen
+import com.armutyus.cameraxproject.ui.gallery.preview.PreviewViewModel
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
-import com.armutyus.cameraxproject.ui.preview.PreviewScreen
-import com.armutyus.cameraxproject.ui.preview.PreviewViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 import com.armutyus.cameraxproject.ui.video.VideoScreen
 import com.armutyus.cameraxproject.ui.video.VideoViewModel
@@ -90,16 +90,26 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(
-                            route = "preview_screen/?filePath={filePath}",
+                            route = "preview_screen/?filePath={filePath}/?itemType={itemType}",
                             arguments = listOf(
                                 navArgument("filePath") {
+                                    type = NavType.StringType
+                                    defaultValue = ""
+                                },
+                                navArgument("itemType") {
                                     type = NavType.StringType
                                     defaultValue = ""
                                 }
                             )
                         ) {
                             val filePath = remember { it.arguments?.getString("filePath") }
-                            PreviewScreen(filePath = filePath ?: "", navController = navController, factory = viewModelFactory) {
+                            val itemType = remember { it.arguments?.getString("itemType") }
+                            PreviewScreen(
+                                filePath = filePath ?: "",
+                                itemType = itemType ?: "",
+                                navController = navController,
+                                factory = viewModelFactory
+                            ) {
                                 showMessage(this@MainActivity, it)
                             }
                         }

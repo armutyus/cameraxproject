@@ -1,7 +1,6 @@
 package com.armutyus.cameraxproject.ui.gallery
 
 import android.content.Context
-import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -51,9 +50,9 @@ fun GalleryScreen(
         BottomNavItem.Videos
     )
     val selectableModeItems = listOf(
-        SelectableModeItem.Cancel,
-        SelectableModeItem.Delete,
-        SelectableModeItem.Share
+        BottomNavItem.Cancel,
+        BottomNavItem.Delete,
+        BottomNavItem.Share
     )
 
     LaunchedEffect(galleryViewModel) {
@@ -86,19 +85,19 @@ fun GalleryScreen(
             if (state.selectableMode)
                 TopAppBar(
                     navigationIcon = {
-                                     IconButton(onClick = { galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode) }) {
-                                         Icon(
-                                             imageVector = Icons.Sharp.ArrowBack,
-                                             contentDescription = stringResource(id = R.string.cancel)
-                                         )
-                                     }
+                        IconButton(onClick = { galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode) }) {
+                            Icon(
+                                imageVector = Icons.Sharp.ArrowBack,
+                                contentDescription = stringResource(id = R.string.cancel)
+                            )
+                        }
                     },
                     title = { Text(text = stringResource(id = R.string.select)) },
                     actions = {
                         Icon(
                             imageVector = Icons.Sharp.Checklist,
                             modifier = Modifier
-                                .padding(horizontal = 32.dp)
+                                .padding(horizontal = 16.dp)
                                 .clickable { galleryViewModel.onEvent(GalleryEvent.SelectAllClicked) },
                             contentDescription = stringResource(id = R.string.select_all)
                         )
@@ -151,15 +150,16 @@ fun GalleryScreen(
                             alwaysShowLabel = true,
                             onClick = {
                                 when (selectableModeItem) {
-                                    SelectableModeItem.Cancel -> {
+                                    BottomNavItem.Cancel -> {
                                         galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode)
                                     }
-                                    SelectableModeItem.Delete -> {
+                                    BottomNavItem.Delete -> {
                                         galleryViewModel.onEvent(GalleryEvent.DeleteTapped)
                                     }
-                                    SelectableModeItem.Share -> {
-                                        galleryViewModel.onEvent(GalleryEvent.ShareTapped)
+                                    BottomNavItem.Share -> {
+                                        galleryViewModel.onEvent(GalleryEvent.ShareTapped(context))
                                     }
+                                    else -> {}
                                 }
                             }
                         )
@@ -311,7 +311,7 @@ fun MediaItemBox(
     selectableMode: Boolean,
     onItemChecked: (item: MediaItem) -> Unit,
     onItemUnchecked: (item: MediaItem) -> Unit,
-    onItemClicked: (uri: Uri?) -> Unit,
+    onItemClicked: (item: MediaItem) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
     var checked by remember { mutableStateOf(item.selected) }
@@ -339,7 +339,7 @@ fun MediaItemBox(
             .width(96.dp)
             .combinedClickable(
                 onLongClick = { onItemLongClicked() },
-                onClick = { onItemClicked(item.uri) }
+                onClick = { onItemClicked(item) }
             )
     ) {
         Image(

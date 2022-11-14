@@ -1,9 +1,7 @@
 package com.armutyus.cameraxproject.ui.gallery.models
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.LibraryBooks
-import androidx.compose.material.icons.sharp.PhotoLibrary
-import androidx.compose.material.icons.sharp.VideoLibrary
+import androidx.compose.material.icons.sharp.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.armutyus.cameraxproject.R
 
@@ -15,5 +13,10 @@ sealed class BottomNavItem(var filter: MediaItem.Filter?, var icon: ImageVector,
 
     object Videos :
         BottomNavItem(MediaItem.Filter.VIDEOS, Icons.Sharp.VideoLibrary, R.string.videos)
+
+    object EditItem : BottomNavItem(null, Icons.Sharp.Edit, R.string.edit)
+    object Cancel : BottomNavItem(null, Icons.Sharp.Cancel, R.string.cancel)
+    object Delete : BottomNavItem(null, Icons.Sharp.Delete, R.string.delete)
+    object Share : BottomNavItem(null, Icons.Sharp.Share, R.string.share)
 
 }
