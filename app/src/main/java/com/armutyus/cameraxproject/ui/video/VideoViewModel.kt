@@ -102,8 +102,11 @@ class VideoViewModel constructor(
     }
 
     private fun onThumbnailTapped(uri: Uri?) {
+        val type = "video"
         viewModelScope.launch {
-            _videoEffect.emit(VideoEffect.NavigateTo("preview_screen/${uri?.toString()}"))
+            _videoEffect.emit(
+                VideoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+            )
         }
     }
 

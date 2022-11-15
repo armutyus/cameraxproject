@@ -126,8 +126,11 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
     }
 
     private fun onThumbnailTapped(uri: Uri?) {
+        val type = "photo"
         viewModelScope.launch {
-            _photoEffect.emit(PhotoEffect.NavigateTo("preview_screen/${uri?.toString()}"))
+            _photoEffect.emit(
+                PhotoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+            )
         }
     }
 

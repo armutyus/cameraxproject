@@ -39,6 +39,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _selectedItems = MutableStateFlow(mutableListOf<MediaItem>())
     val selectedItems: StateFlow<List<MediaItem>> = _selectedItems
 
+    private val _currentItem = MutableStateFlow(MediaItem())
+    val currentItem: StateFlow<MediaItem> = _currentItem
+
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
 
@@ -190,5 +193,15 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             cancelSelectableMode()
             loadMedia()
         }
+    }
+
+    fun findCurrentItem(filePath: String): MediaItem {
+        viewModelScope.launch {
+            val currentItemList = _mediaItems.value.values.flatten()
+            _currentItem.value = currentItemList.firstOrNull {
+                it.uri?.toString() == filePath
+            } ?: MediaItem()
+        }
+        return _currentItem.value
     }
 }
