@@ -19,6 +19,7 @@
     <string name="gallery_items">Photos and Videos</string>
     <string name="no_app_available">No App Available</string>
     <string name="choose_media">Choose some image or video to share</string>
+    <string name="file_error">Seems like file does not exist.</string>
     <string name="unknown_viewmodel">Unknown ViewModel class</string>
     <string name="change_flash_settings">Change flash settings</string>
     <string name="flip_camera">Flip camera</string>
