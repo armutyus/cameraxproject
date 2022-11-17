@@ -7,15 +7,17 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.navArgument
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
@@ -32,6 +34,8 @@ import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -54,18 +58,33 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalAnimationApi::class)
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CameraXProjectTheme {
                 Permissions(permissionGrantedContent = {
-                    val navController = rememberNavController()
-                    NavHost(
+                    val navController = rememberAnimatedNavController()
+                    AnimatedNavHost(
                         navController = navController,
                         startDestination = GALLERY_ROUTE
                     ) {
-                        composable(GALLERY_ROUTE) {
+                        composable(
+                            GALLERY_ROUTE,
+                            enterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            exitTransition = {
+                                fadeOut(tween(700))
+                            },
+                            popEnterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            popExitTransition = {
+                                fadeOut(tween(700))
+                            }
+                        ) {
                             GalleryScreen(
                                 navController = navController,
                                 factory = viewModelFactory,
@@ -73,7 +92,21 @@ class MainActivity : ComponentActivity() {
                                 showMessage(this@MainActivity, it)
                             }
                         }
-                        composable(PHOTO_ROUTE) {
+                        composable(
+                            PHOTO_ROUTE,
+                            enterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            exitTransition = {
+                                fadeOut(tween(700))
+                            },
+                            popEnterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            popExitTransition = {
+                                fadeOut(tween(700))
+                            }
+                        ) {
                             PhotoScreen(
                                 navController = navController,
                                 factory = viewModelFactory
@@ -81,7 +114,21 @@ class MainActivity : ComponentActivity() {
                                 showMessage(this@MainActivity, it)
                             }
                         }
-                        composable(VIDEO_ROUTE) {
+                        composable(
+                            VIDEO_ROUTE,
+                            enterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            exitTransition = {
+                                fadeOut(tween(700))
+                            },
+                            popEnterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            popExitTransition = {
+                                fadeOut(tween(700))
+                            }
+                        ) {
                             VideoScreen(
                                 navController = navController,
                                 factory = viewModelFactory
@@ -100,7 +147,19 @@ class MainActivity : ComponentActivity() {
                                     type = NavType.StringType
                                     defaultValue = ""
                                 }
-                            )
+                            ),
+                            enterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            exitTransition = {
+                                fadeOut(tween(700))
+                            },
+                            popEnterTransition = {
+                                fadeIn(tween(700))
+                            },
+                            popExitTransition = {
+                                fadeOut(tween(700))
+                            }
                         ) {
                             val filePath = remember { it.arguments?.getString("filePath") }
                             val itemType = remember { it.arguments?.getString("itemType") }

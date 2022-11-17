@@ -97,6 +97,8 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             _mediaItems.value += groupedMedia
             _photoItems.value += groupedPhotos
             _videoItems.value += groupedVideos
+
+            println(groupedMedia.toString())
         }
     }
 
@@ -108,7 +110,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     }
 
     private fun onSelectAllClicked() {
-        //handle item.selected update
+        viewModelScope.launch {
+
+        }
     }
 
     private fun onItemClicked(item: MediaItem?) {
@@ -140,15 +144,15 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
     private fun onItemChecked(item: MediaItem) {
         viewModelScope.launch {
-            _selectedItems.value.add(item)
             item.selected = true
+            _selectedItems.value.add(item)
         }
     }
 
     private fun onItemUnchecked(item: MediaItem) {
         viewModelScope.launch {
-            _selectedItems.value.remove(item)
             item.selected = false
+            _selectedItems.value.remove(item)
         }
     }
 

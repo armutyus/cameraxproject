@@ -1,7 +1,6 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
 import android.net.Uri
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
@@ -12,14 +11,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toFile
@@ -28,15 +29,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
+import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PlaybackStatus
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEffect
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.CameraPauseIcon
 import com.armutyus.cameraxproject.util.CameraPlayIcon
+import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
 fun PreviewScreen(
     filePath: String,
@@ -44,11 +51,13 @@ fun PreviewScreen(
     navController: NavController,
     factory: ViewModelProvider.Factory,
     previewViewModel: PreviewViewModel = viewModel(factory = factory),
+    galleryViewModel: GalleryViewModel = viewModel(factory = factory),
     onShowMessage: (message: String) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val state by previewViewModel.previewScreenState.collectAsState()
+    val media by galleryViewModel.mediaItems.collectAsState()
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -189,6 +198,137 @@ fun PreviewScreen(
                 .fillMaxSize()
                 .padding(it)
         ) {
+            val currentList = media.values.flatten()
+            val count = currentList.size
+            val initialItem = currentList.firstOrNull { mediaItem ->  mediaItem.name == currentFile.name }
+            var currentItemIndex by remember { mutableStateOf(currentList.indexOf(initialItem)) }
+            val pagerState = rememberPagerState(currentItemIndex)
+            LaunchedEffect(pagerState) {
+                // Collect from the pager state a snapshotFlow reading the currentPage
+                snapshotFlow { pagerState.currentPage }.collect { page ->
+                    currentItemIndex = page
+                }
+            }
+            HorizontalPager(
+                modifier = Modifier.fillMaxSize(),
+                count = count,
+                state = pagerState,
+                itemSpacing = 2.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RectangleShape)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = { offset ->
+                                    if (scale >= 2f) {
+                                        scale = 1f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                    } else {
+                                        scale = 3f
+                                        offsetY = offset.x
+                                        rotationState = 0f
+                                    }
+                                },
+                                onTap = {
+                                    if (zoomState) {
+                                        showBars = !showBars
+                                    }
+                                }
+                            )
+                        }
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                awaitFirstDown()
+                                do {
+                                    val event = awaitPointerEvent()
+                                    scale *= event.calculateZoom()
+                                    if (scale > 1) {
+                                        val offset = event.calculatePan()
+                                        offsetX += offset.x
+                                        offsetY += offset.y
+                                        rotationState += event.calculateRotation()
+                                        zoomState = false
+                                        showBars = false
+                                    } else {
+                                        scale = 1f
+                                        offsetX = 0f
+                                        offsetY = 0f
+                                        rotationState = 0f
+                                        zoomState = true
+                                    }
+                                } while (event.changes.any { pointerInputChange -> pointerInputChange.pressed })
+                            }
+                        }
+                ) {
+                    when (currentList[currentItemIndex].type) {
+                        MediaItem.Type.PHOTO -> {
+                            AsyncImage(
+                                model = currentList[currentItemIndex].uri,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .graphicsLayer(
+                                        scaleX = maxOf(1f, minOf(3f, scale)),
+                                        scaleY = maxOf(1f, minOf(3f, scale)),
+                                        rotationZ = rotationState,
+                                        translationX = offsetX,
+                                        translationY = offsetY
+                                    ),
+                                filterQuality = FilterQuality.High,
+                                contentDescription = ""
+                            )
+                        }
+                        MediaItem.Type.VIDEO -> {
+                            CompositionLocalProvider(LocalPlaybackManager provides playbackManager) {
+                                VideoPlaybackContent(state, previewViewModel::onEvent)
+                            }
+                        }
+                        else -> onShowMessage(GENERAL_ERROR_MESSAGE)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoPlaybackContent(
+    state: PreviewScreenState,
+    onEvent: (PreviewScreenEvent) -> Unit
+) {
+    val playbackManager = LocalPlaybackManager.current
+
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .background(color = MaterialTheme.colorScheme.background)) {
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = { playbackManager.videoView })
+        when (state.playbackStatus) {
+            PlaybackStatus.Idle -> {
+                CameraPlayIcon(Modifier.align(Alignment.BottomCenter)) {
+                    onEvent(PreviewScreenEvent.PlayTapped)
+                }
+            }
+            PlaybackStatus.InProgress -> {
+                CameraPauseIcon(Modifier.align(Alignment.BottomCenter)) {
+                    onEvent(PreviewScreenEvent.PauseTapped)
+                }
+            }
+            else -> {
+                CircularProgressIndicator()
+            }
+        }
+    }
+}
+
+//old code without horizontal pager
+/*
+{
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it)
+        ) {
             Box(
                 modifier = Modifier
                     .clip(RectangleShape)
@@ -259,33 +399,4 @@ fun PreviewScreen(
             }
         }
     }
-}
-
-@Composable
-private fun VideoPlaybackContent(
-    state: PreviewScreenState,
-    onEvent: (PreviewScreenEvent) -> Unit
-) {
-    val playbackManager = LocalPlaybackManager.current
-
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(color = MaterialTheme.colorScheme.background)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { playbackManager.videoView })
-        when (state.playbackStatus) {
-            PlaybackStatus.Idle -> {
-                CameraPlayIcon(Modifier.align(Alignment.Center)) {
-                    onEvent(PreviewScreenEvent.PlayTapped)
-                }
-            }
-            PlaybackStatus.InProgress -> {
-                CameraPauseIcon(Modifier.align(Alignment.Center)) {
-                    onEvent(PreviewScreenEvent.PlayTapped)
-                }
-            }
-            else -> {
-                CircularProgressIndicator()
-            }
-        }
-    }
-}
+*/

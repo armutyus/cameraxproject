@@ -41,7 +41,6 @@ fun GalleryScreen(
     val media by galleryViewModel.mediaItems.collectAsState()
     val groupedPhotos by galleryViewModel.photoItems.collectAsState()
     val groupedVideos by galleryViewModel.videoItems.collectAsState()
-    val selectedItems by galleryViewModel.selectedItems.collectAsState()
     val context = LocalContext.current
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
     val bottomNavItems = listOf(
@@ -314,7 +313,7 @@ fun MediaItemBox(
     onItemClicked: (item: MediaItem) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
-    var checked by remember { mutableStateOf(item.selected) }
+    //var checked by remember { mutableStateOf(false) }
 
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -371,9 +370,9 @@ fun MediaItemBox(
                 modifier = Modifier
                     .offset(x = 5.dp, y = (-10).dp)
                     .align(Alignment.TopEnd),
-                checked = checked,
+                checked = item.selected,
                 onCheckedChange = {
-                    checked = it
+                    item.selected = it
                     if (it) {
                         onItemChecked(item)
                     } else {
