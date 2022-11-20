@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.MediaController
 import android.widget.VideoView
 import androidx.compose.runtime.compositionLocalOf
 import androidx.lifecycle.LifecycleOwner

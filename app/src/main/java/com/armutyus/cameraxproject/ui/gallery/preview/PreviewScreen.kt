@@ -1,6 +1,7 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
 import android.net.Uri
+import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
@@ -15,7 +16,6 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
@@ -27,7 +27,9 @@ import androidx.core.net.toFile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
@@ -56,6 +58,7 @@ fun PreviewScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val view = LocalView.current
     val state by previewViewModel.previewScreenState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
     var scale by remember { mutableStateOf(1f) }
@@ -200,21 +203,18 @@ fun PreviewScreen(
         ) {
             val currentList = media.values.flatten()
             val count = currentList.size
-            val initialItem = currentList.firstOrNull { mediaItem ->  mediaItem.name == currentFile.name }
-            var currentItemIndex by remember { mutableStateOf(currentList.indexOf(initialItem)) }
-            val pagerState = rememberPagerState(currentItemIndex)
-            LaunchedEffect(pagerState) {
-                // Collect from the pager state a snapshotFlow reading the currentPage
-                snapshotFlow { pagerState.currentPage }.collect { page ->
-                    currentItemIndex = page
-                }
-            }
+            val initialItem =
+                currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }
+            val initialItemIndex by remember { mutableStateOf(currentList.indexOf(initialItem)) }
+            val pagerState = rememberPagerState(initialItemIndex)
+
             HorizontalPager(
                 modifier = Modifier.fillMaxSize(),
                 count = count,
                 state = pagerState,
+                userScrollEnabled = !zoomState,
                 itemSpacing = 2.dp
-            ) {
+            ) { page ->
                 Box(
                     modifier = Modifier
                         .clip(RectangleShape)
@@ -227,12 +227,14 @@ fun PreviewScreen(
                                         offsetY = 0f
                                     } else {
                                         scale = 3f
-                                        offsetY = offset.x
+                                        offsetX -= offset.x
+                                        offsetY -= offset.y
                                         rotationState = 0f
+                                        zoomState = false
                                     }
                                 },
                                 onTap = {
-                                    if (zoomState) {
+                                    if (!zoomState) {
                                         showBars = !showBars
                                     }
                                 }
@@ -249,23 +251,23 @@ fun PreviewScreen(
                                         offsetX += offset.x
                                         offsetY += offset.y
                                         rotationState += event.calculateRotation()
-                                        zoomState = false
+                                        zoomState = true
                                         showBars = false
                                     } else {
                                         scale = 1f
                                         offsetX = 0f
                                         offsetY = 0f
                                         rotationState = 0f
-                                        zoomState = true
+                                        zoomState = false
                                     }
                                 } while (event.changes.any { pointerInputChange -> pointerInputChange.pressed })
                             }
                         }
                 ) {
-                    when (currentList[currentItemIndex].type) {
+                    when (currentList[page].type) {
                         MediaItem.Type.PHOTO -> {
-                            AsyncImage(
-                                model = currentList[currentItemIndex].uri,
+                            SubcomposeAsyncImage(
+                                model = currentList[page].uri,
                                 modifier = Modifier
                                     .align(Alignment.Center)
                                     .graphicsLayer(
@@ -277,11 +279,18 @@ fun PreviewScreen(
                                     ),
                                 filterQuality = FilterQuality.High,
                                 contentDescription = ""
-                            )
+                            ) {
+                                val painterState = painter.state
+                                if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
+                                    LinearProgressIndicator()
+                                } else {
+                                    SubcomposeAsyncImageContent()
+                                }
+                            }
                         }
                         MediaItem.Type.VIDEO -> {
                             CompositionLocalProvider(LocalPlaybackManager provides playbackManager) {
-                                VideoPlaybackContent(state, previewViewModel::onEvent)
+                                VideoPlaybackContent(state, view, previewViewModel::onEvent)
                             }
                         }
                         else -> onShowMessage(GENERAL_ERROR_MESSAGE)
@@ -295,14 +304,26 @@ fun PreviewScreen(
 @Composable
 private fun VideoPlaybackContent(
     state: PreviewScreenState,
+    currentView: View,
     onEvent: (PreviewScreenEvent) -> Unit
 ) {
     val playbackManager = LocalPlaybackManager.current
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(color = MaterialTheme.colorScheme.background)) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = { playbackManager.videoView })
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.background)
+    ) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = {
+                playbackManager.videoView/*.also {
+                    if(it.parent != null) {
+                        (it.parent as ViewGroup).removeView(it)
+                    }
+                }*/
+            }
+        )
         when (state.playbackStatus) {
             PlaybackStatus.Idle -> {
                 CameraPlayIcon(Modifier.align(Alignment.BottomCenter)) {

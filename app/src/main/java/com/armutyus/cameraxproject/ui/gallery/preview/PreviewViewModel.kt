@@ -97,7 +97,12 @@ class PreviewViewModel : ViewModel() {
     }
 
     private fun onProgress(progress: Int) {
-        _previewScreenState.update { it.copy(playbackPosition = progress, playbackStatus = PlaybackStatus.InProgress) }
+        _previewScreenState.update {
+            it.copy(
+                playbackPosition = progress,
+                playbackStatus = PlaybackStatus.InProgress
+            )
+        }
     }
 
     private fun onPrepared() {
@@ -105,7 +110,12 @@ class PreviewViewModel : ViewModel() {
     }
 
     private fun onCompleted() {
-        _previewScreenState.update { it.copy(playbackStatus = PlaybackStatus.Idle, playbackPosition = 0) }
+        _previewScreenState.update {
+            it.copy(
+                playbackStatus = PlaybackStatus.Idle,
+                playbackPosition = 0
+            )
+        }
     }
 
 }

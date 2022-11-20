@@ -17,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavType
-import com.google.accompanist.navigation.animation.composable
 import androidx.navigation.navArgument
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
@@ -35,6 +34,7 @@ import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 

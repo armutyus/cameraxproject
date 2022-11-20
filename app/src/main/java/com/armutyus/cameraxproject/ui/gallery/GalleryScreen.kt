@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.sharp.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -39,6 +40,7 @@ fun GalleryScreen(
 ) {
     val state by galleryViewModel.galleryState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
+    val selectedItems by galleryViewModel.selectedItems.collectAsState()
     val groupedPhotos by galleryViewModel.photoItems.collectAsState()
     val groupedVideos by galleryViewModel.videoItems.collectAsState()
     val context = LocalContext.current
@@ -225,7 +227,7 @@ fun GalleryScreenContent(
                                     selectableMode = selectableMode,
                                     onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
                                     onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
                                 ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
@@ -258,7 +260,7 @@ fun GalleryScreenContent(
                                     selectableMode = selectableMode,
                                     onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
                                     onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
                                 ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
@@ -291,7 +293,7 @@ fun GalleryScreenContent(
                                     selectableMode = selectableMode,
                                     onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
                                     onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { onEvent(GalleryEvent.ItemClicked(it)) }
+                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
                                 ) { onEvent(GalleryEvent.ItemLongClicked) }
                             }
                         }
@@ -313,7 +315,14 @@ fun MediaItemBox(
     onItemClicked: (item: MediaItem) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
-    //var checked by remember { mutableStateOf(false) }
+    var checked by rememberSaveable { mutableStateOf(false) }
+    val itemChecked by rememberUpdatedState(newValue = onItemChecked)
+    val itemUnchecked by rememberUpdatedState(newValue = onItemUnchecked)
+    LaunchedEffect(selectableMode) {
+        snapshotFlow { checked }.collect {
+            if (it) itemChecked(item) else itemUnchecked(item)
+        }
+    }
 
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -370,14 +379,9 @@ fun MediaItemBox(
                 modifier = Modifier
                     .offset(x = 5.dp, y = (-10).dp)
                     .align(Alignment.TopEnd),
-                checked = item.selected,
+                checked = checked,
                 onCheckedChange = {
-                    item.selected = it
-                    if (it) {
-                        onItemChecked(item)
-                    } else {
-                        onItemUnchecked(item)
-                    }
+                    checked = it
                 }
             )
         }
