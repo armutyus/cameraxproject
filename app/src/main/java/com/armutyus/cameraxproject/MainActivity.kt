@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @UnstableApi
     @OptIn(ExperimentalAnimationApi::class)
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,13 +139,9 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(
-                            route = "preview_screen/?filePath={filePath}/?itemType={itemType}",
+                            route = "preview_screen/?filePath={filePath}",
                             arguments = listOf(
                                 navArgument("filePath") {
-                                    type = NavType.StringType
-                                    defaultValue = ""
-                                },
-                                navArgument("itemType") {
                                     type = NavType.StringType
                                     defaultValue = ""
                                 }
@@ -162,10 +160,8 @@ class MainActivity : ComponentActivity() {
                             }
                         ) {
                             val filePath = remember { it.arguments?.getString("filePath") }
-                            val itemType = remember { it.arguments?.getString("itemType") }
                             PreviewScreen(
                                 filePath = filePath ?: "",
-                                itemType = itemType ?: "",
                                 navController = navController,
                                 factory = viewModelFactory
                             ) {

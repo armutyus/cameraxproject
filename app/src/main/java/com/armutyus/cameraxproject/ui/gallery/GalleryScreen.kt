@@ -38,11 +38,12 @@ fun GalleryScreen(
     galleryViewModel: GalleryViewModel = viewModel(factory = factory),
     onShowMessage: (message: String) -> Unit
 ) {
+
     val state by galleryViewModel.galleryState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
-    val selectedItems by galleryViewModel.selectedItems.collectAsState()
-    val groupedPhotos by galleryViewModel.photoItems.collectAsState()
-    val groupedVideos by galleryViewModel.videoItems.collectAsState()
+    val groupedPhotos = media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }.groupBy { it.takenTime }
+    val groupedVideos = media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }.groupBy { it.takenTime }
+
     val context = LocalContext.current
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
     val bottomNavItems = listOf(
@@ -176,12 +177,13 @@ fun GalleryScreen(
         ) {
             GalleryScreenContent(
                 context = context,
-                groupedMedia = media,
-                groupedPhotos = groupedPhotos,
-                groupedVideos = groupedVideos,
+                groupedMedia = when (filterContent) {
+                    MediaItem.Filter.ALL -> media
+                    MediaItem.Filter.PHOTOS -> groupedPhotos
+                    MediaItem.Filter.VIDEOS -> groupedVideos
+                                                    },
                 selectableMode = state.selectableMode,
-                onEvent = galleryViewModel::onEvent,
-                filterContent = filterContent
+                onEvent = galleryViewModel::onEvent
             )
         }
     }
@@ -192,111 +194,38 @@ fun GalleryScreen(
 fun GalleryScreenContent(
     context: Context,
     groupedMedia: Map<String, List<MediaItem>>,
-    groupedPhotos: Map<String, List<MediaItem>>,
-    groupedVideos: Map<String, List<MediaItem>>,
     selectableMode: Boolean,
-    onEvent: (GalleryEvent) -> Unit,
-    filterContent: MediaItem.Filter
+    onEvent: (GalleryEvent) -> Unit
 ) {
     val numberOfItemsByRow = LocalConfiguration.current.screenWidthDp / 96
     LazyColumn {
-        when (filterContent) {
-            MediaItem.Filter.ALL -> {
-                groupedMedia.forEach { (takenTime, mediaForTakenTime) ->
-                    stickyHeader {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime,
-                        )
-                    }
-                    items(
-                        items = mediaForTakenTime.chunked(numberOfItemsByRow)
-                    ) { mediaList ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(1.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (media in mediaList) {
-                                MediaItemBox(
-                                    item = media,
-                                    context = context,
-                                    selectableMode = selectableMode,
-                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
-                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
-                                ) { onEvent(GalleryEvent.ItemLongClicked) }
-                            }
-                        }
-                    }
-                }
+        groupedMedia.forEach { (takenTime, mediaForTakenTime) ->
+            stickyHeader {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    text = takenTime,
+                )
             }
-            MediaItem.Filter.PHOTOS -> {
-                groupedPhotos.forEach { (takenTime, photosForTakenTime) ->
-                    stickyHeader {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime,
-                        )
-                    }
-                    items(
-                        items = photosForTakenTime.chunked(numberOfItemsByRow)
-                    ) { photos ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(1.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (item in photos) {
-                                MediaItemBox(
-                                    item = item,
-                                    context = context,
-                                    selectableMode = selectableMode,
-                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
-                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
-                                ) { onEvent(GalleryEvent.ItemLongClicked) }
-                            }
-                        }
-                    }
-                }
-            }
-            MediaItem.Filter.VIDEOS -> {
-                groupedVideos.forEach { (takenTime, videosForTakenTime) ->
-                    stickyHeader {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(color = MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = takenTime,
-                        )
-                    }
-                    items(
-                        items = videosForTakenTime.chunked(numberOfItemsByRow)
-                    ) { videos ->
-                        Row(
-                            modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(1.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            for (item in videos) {
-                                MediaItemBox(
-                                    item = item,
-                                    context = context,
-                                    selectableMode = selectableMode,
-                                    onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
-                                    onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
-                                    onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
-                                ) { onEvent(GalleryEvent.ItemLongClicked) }
-                            }
-                        }
+            items(
+                items = mediaForTakenTime.chunked(numberOfItemsByRow)
+            ) { mediaList ->
+                Row(
+                    modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(1.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (media in mediaList) {
+                        MediaItemBox(
+                            item = media,
+                            context = context,
+                            selectableMode = selectableMode,
+                            onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
+                            onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
+                            onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
+                        ) { onEvent(GalleryEvent.ItemLongClicked) }
                     }
                 }
             }
@@ -315,7 +244,7 @@ fun MediaItemBox(
     onItemClicked: (item: MediaItem) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
-    var checked by rememberSaveable { mutableStateOf(false) }
+    var checked by rememberSaveable { mutableStateOf(item.selected) }
     val itemChecked by rememberUpdatedState(newValue = onItemChecked)
     val itemUnchecked by rememberUpdatedState(newValue = onItemUnchecked)
     LaunchedEffect(selectableMode) {

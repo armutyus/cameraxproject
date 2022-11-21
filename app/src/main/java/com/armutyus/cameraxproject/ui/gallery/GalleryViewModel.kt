@@ -8,6 +8,8 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.R
@@ -30,17 +32,15 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _mediaItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
     val mediaItems: StateFlow<Map<String, List<MediaItem>>> = _mediaItems
 
-    private val _photoItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val photoItems: StateFlow<Map<String, List<MediaItem>>> = _photoItems
-
-    private val _videoItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val videoItems: StateFlow<Map<String, List<MediaItem>>> = _videoItems
-
     private val _selectedItems = MutableStateFlow(mutableListOf<MediaItem>())
     val selectedItems: StateFlow<List<MediaItem>> = _selectedItems
 
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
+
+    private val _updateInt: MutableLiveData<Int> = MutableLiveData(0)
+    val updateInt: LiveData<Int>
+        get() = _updateInt
 
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
@@ -91,12 +91,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             media.addAll(photos + videos)
 
             val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
-            val groupedPhotos = photos.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
-            val groupedVideos = videos.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
 
             _mediaItems.value += groupedMedia
-            _photoItems.value += groupedPhotos
-            _videoItems.value += groupedVideos
+            _updateInt.value = updateInt.value?.plus(1)
         }
     }
 
@@ -109,17 +106,21 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
     private fun onSelectAllClicked() {
         viewModelScope.launch {
-
+            _mediaItems.value.forEach {
+                it.value.forEach { mediaItem ->
+                    mediaItem.selected = true
+                }
+            }
+            _updateInt.value = updateInt.value?.plus(1)
         }
     }
 
     private fun onItemClicked(item: MediaItem?) {
         cancelSelectableMode()
         val uri = item?.uri
-        val type = if (item?.type == MediaItem.Type.PHOTO) "photo" else "video"
         viewModelScope.launch {
             _galleryEffect.emit(
-                GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+                GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}")
             )
         }
     }
