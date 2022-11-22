@@ -183,6 +183,7 @@ fun GalleryScreen(
                     MediaItem.Filter.VIDEOS -> groupedVideos
                                                     },
                 selectableMode = state.selectableMode,
+                galleryViewModel = galleryViewModel,
                 onEvent = galleryViewModel::onEvent
             )
         }
@@ -195,6 +196,7 @@ fun GalleryScreenContent(
     context: Context,
     groupedMedia: Map<String, List<MediaItem>>,
     selectableMode: Boolean,
+    galleryViewModel: GalleryViewModel,
     onEvent: (GalleryEvent) -> Unit
 ) {
     val numberOfItemsByRow = LocalConfiguration.current.screenWidthDp / 96
@@ -222,8 +224,7 @@ fun GalleryScreenContent(
                             item = media,
                             context = context,
                             selectableMode = selectableMode,
-                            onItemChecked = { onEvent(GalleryEvent.ItemChecked(it)) },
-                            onItemUnchecked = { onEvent(GalleryEvent.ItemUnchecked(it)) },
+                            galleryViewModel = galleryViewModel,
                             onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
                         ) { onEvent(GalleryEvent.ItemLongClicked) }
                     }
@@ -239,19 +240,12 @@ fun MediaItemBox(
     item: MediaItem,
     context: Context,
     selectableMode: Boolean,
-    onItemChecked: (item: MediaItem) -> Unit,
-    onItemUnchecked: (item: MediaItem) -> Unit,
+    galleryViewModel: GalleryViewModel,
     onItemClicked: (item: MediaItem) -> Unit,
     onItemLongClicked: () -> Unit
 ) {
-    var checked by rememberSaveable { mutableStateOf(item.selected) }
-    val itemChecked by rememberUpdatedState(newValue = onItemChecked)
-    val itemUnchecked by rememberUpdatedState(newValue = onItemUnchecked)
-    LaunchedEffect(selectableMode) {
-        snapshotFlow { checked }.collect {
-            if (it) itemChecked(item) else itemUnchecked(item)
-        }
-    }
+
+    val checked by remember { mutableStateOf(galleryViewModel.itemSelectedCheck(item)) }
 
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -310,7 +304,7 @@ fun MediaItemBox(
                     .align(Alignment.TopEnd),
                 checked = checked,
                 onCheckedChange = {
-                    checked = it
+                    galleryViewModel.onItemCheckedChange(it,item)
                 }
             )
         }

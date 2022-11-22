@@ -45,8 +45,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
             is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item)
-            is GalleryEvent.ItemChecked -> onItemChecked(galleryEvent.item)
-            is GalleryEvent.ItemUnchecked -> onItemUnchecked(galleryEvent.item)
             is GalleryEvent.ShareTapped -> onShareTapped(galleryEvent.context)
 
             GalleryEvent.FabClicked -> onFabClicked()
@@ -87,7 +85,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
                 )
             } as List<MediaItem>
 
-            media.removeAll(photos + videos)
+            media.clear()
             media.addAll(photos + videos)
 
             val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
@@ -109,6 +107,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             _mediaItems.value.forEach {
                 it.value.forEach { mediaItem ->
                     mediaItem.selected = true
+                    _selectedItems.value.add(mediaItem)
                 }
             }
             _updateInt.value = updateInt.value?.plus(1)
@@ -139,20 +138,34 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
                 selectableMode = false
             )
         }
-    }
-
-    private fun onItemChecked(item: MediaItem) {
         viewModelScope.launch {
-            item.selected = true
-            _selectedItems.value.add(item)
+            _selectedItems.value.clear()
         }
     }
 
-    private fun onItemUnchecked(item: MediaItem) {
+    fun onItemCheckedChange(checked: Boolean, item: MediaItem) {
         viewModelScope.launch {
-            item.selected = false
-            _selectedItems.value.remove(item)
+            if (checked) {
+                val checkItem = _selectedItems.value.contains(item)
+                if (!checkItem) {
+                    item.selected = true
+                    _selectedItems.value.add(item)
+                }
+            } else {
+                val checkItem = _selectedItems.value.contains(item)
+                if (checkItem) {
+                    item.selected = false
+                    _selectedItems.value.remove(item)
+                }
+            }
+            _galleryState.update {
+                it.copy(checked = checked)
+            }
         }
+    }
+
+    fun itemSelectedCheck(item: MediaItem): Boolean {
+        return item.selected
     }
 
     private fun onShareTapped(context: Context) {

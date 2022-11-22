@@ -30,6 +30,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImagePainter
@@ -278,6 +280,7 @@ private fun VideoPlaybackContent(
     filePath: Uri?
 ) {
 
+    val context = LocalContext.current
     var lifecycle by remember {
         mutableStateOf(Lifecycle.Event.ON_CREATE)
     }
@@ -300,43 +303,42 @@ private fun VideoPlaybackContent(
             .fillMaxSize()
             .background(color = MaterialTheme.colorScheme.background)
     ) {
-        AndroidView(
-            modifier = Modifier.fillMaxWidth(),
-            factory = {
-                val videoPlayer = ExoPlayer.Builder(it).build()
-                playerView = PlayerView(it)
-                playerView.apply {
-                    val params = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    this!!.layoutParams = params
-                    this.player = videoPlayer
-                    setShowNextButton(false)
-                    setShowPreviousButton(false)
-                    controllerShowTimeoutMs = 3000
-                    this.player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                    this.player?.prepare()
-                }!!
-            },
-            update = {
-                it.apply {
-                    player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
+        val videoPlayer = remember(context) { ExoPlayer.Builder(context).build() }
+        DisposableEffect(
+            AndroidView(
+                modifier = Modifier.fillMaxWidth(),
+                factory = {
+                    playerView = PlayerView(it)
+                    playerView.apply {
+                        this!!.player = videoPlayer
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
+                        setShowNextButton(false)
+                        setShowPreviousButton(false)
+                        controllerShowTimeoutMs = 3000
+                        this.player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
+                        this.player?.prepare()
+                    }!!
+                },
+                update = {
+                    it.apply {
+                        player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
+                    }
+                    when (lifecycle) {
+                        Lifecycle.Event.ON_PAUSE -> {
+                            it.onPause()
+                            it.player?.pause()
+                        }
+                        Lifecycle.Event.ON_RESUME -> {
+                            it.onResume()
+                        }
+                        else -> Unit
+                    }
                 }
-                when (lifecycle) {
-                    Lifecycle.Event.ON_PAUSE -> {
-                        it.onPause()
-                        it.player?.pause()
-                    }
-                    Lifecycle.Event.ON_RESUME -> {
-                        it.onResume()
-                    }
-                    Lifecycle.Event.ON_STOP -> {
-                        it.player?.release()
-                    }
-                    else -> Unit
-                }
+            )
+        ) {
+            onDispose {
+                videoPlayer.release()
             }
-        )
+        }
     }
 }
