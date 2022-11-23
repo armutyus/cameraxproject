@@ -172,7 +172,7 @@ fun CameraCaptureIcon(modifier: Modifier = Modifier, view: View, onTapped: () ->
 }
 
 @Composable
-fun CameraPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+fun VideoPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier.then(modifier),
         onClick = { onTapped() },
@@ -191,7 +191,7 @@ fun CameraPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 
 
 @Composable
-fun CameraPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+fun VideoPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
             .then(modifier),
@@ -204,6 +204,63 @@ fun CameraPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
                 modifier = Modifier.size(64.dp),
                 imageVector = Icons.Sharp.PlayCircle,
                 contentDescription = stringResource(id = R.string.play_video)
+            )
+        }
+    )
+}
+
+@Composable
+fun VideoReplayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
+        content = {
+            Icon(
+                modifier = Modifier.size(64.dp),
+                imageVector = Icons.Sharp.Replay5,
+                contentDescription = stringResource(id = R.string.replay_5)
+            )
+        }
+    )
+}
+
+@Composable
+fun VideoForwardIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
+        content = {
+            Icon(
+                modifier = Modifier.size(64.dp),
+                imageVector = Icons.Sharp.Forward5,
+                contentDescription = stringResource(id = R.string.forward_5)
+            )
+        }
+    )
+}
+
+@Composable
+fun FullScreenToggleIcon(modifier: Modifier = Modifier, isFullScreen: Boolean, onTapped: () -> Unit) {
+    IconButton(
+        modifier = Modifier
+            .then(modifier),
+        onClick = { onTapped() },
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary
+        ),
+        content = {
+            Icon(
+                modifier = Modifier.size(64.dp),
+                imageVector = if (isFullScreen) Icons.Sharp.Fullscreen else Icons.Sharp.FullscreenExit,
+                contentDescription = stringResource(id = R.string.fullscreen_toggle)
             )
         }
     )

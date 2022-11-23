@@ -12,6 +12,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import com.armutyus.cameraxproject.util.Util.Companion.RATIO_16_9_VALUE
 import com.armutyus.cameraxproject.util.Util.Companion.RATIO_4_3_VALUE
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -24,45 +25,24 @@ fun View.vibrate(feedbackConstant: Int) {
     performHapticFeedback(feedbackConstant, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING)
 }
 
-
-fun aspectRatio(width: Int, height: Int): Int {
-    val previewRatio = max(width, height).toDouble() / min(width, height)
-    if (abs(previewRatio - RATIO_4_3_VALUE) <= abs(previewRatio - RATIO_16_9_VALUE)) {
-        return AspectRatio.RATIO_4_3
-    }
-    return AspectRatio.RATIO_16_9
-}
-
-/**
- * a helper function to retrieve the aspect ratio from a QualitySelector enum.
- */
-fun Quality.getAspectRatio(quality: Quality): Int {
-    return when {
-        arrayOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.HIGHEST)
-            .contains(quality) -> AspectRatio.RATIO_16_9
-        (quality == Quality.SD) -> AspectRatio.RATIO_4_3
-        else -> throw UnsupportedOperationException()
-    }
-}
-
-@Composable
-fun LockScreenOrientation(orientation: Int) {
-    val context = LocalContext.current
-    DisposableEffect(Unit) {
-        val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
-        val originalOrientation = activity.requestedOrientation
-        activity.requestedOrientation = orientation
-        onDispose {
-            // restore original orientation when view disappears
-            activity.requestedOrientation = originalOrientation
-        }
-    }
-}
-
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+fun Long.formatMinSec(): String {
+    return if (this == 0L) {
+        "..."
+    } else {
+        String.format(
+            "%02d : %02d",
+            TimeUnit.MILLISECONDS.toMinutes(this),
+            TimeUnit.MILLISECONDS.toSeconds(this) - TimeUnit.MINUTES.toSeconds(
+                TimeUnit.MILLISECONDS.toMinutes(this)
+            )
+        )
+    }
 }
 
 

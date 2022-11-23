@@ -29,6 +29,9 @@
     <string name="pause_recording">Pause recording</string>
     <string name="play_video">Play video</string>
     <string name="pause_video">Pause video</string>
+    <string name="replay_5">Replay five seconds</string>
+    <string name="forward_5">Forward five seconds</string>
+    <string name="fullscreen_toggle">Fullscreen toggle</string>
     <string name="capture_image">Capture image</string>
     <string name="latest_image">Latest captured image</string>
     <string name="add_filter">Add filter</string>

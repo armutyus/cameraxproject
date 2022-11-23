@@ -29,6 +29,7 @@ import coil.decode.VideoFrameDecoder
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.*
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,8 +59,6 @@ fun GalleryScreen(
     )
 
     LaunchedEffect(galleryViewModel) {
-        galleryViewModel.loadMedia()
-
         galleryViewModel.galleryEffect.collect {
             when (it) {
                 is GalleryEffect.NavigateTo -> {
@@ -245,7 +244,17 @@ fun MediaItemBox(
     onItemLongClicked: () -> Unit
 ) {
 
-    val checked by remember { mutableStateOf(galleryViewModel.itemSelectedCheck(item)) }
+    val state by galleryViewModel.galleryState.collectAsState()
+    var checked by remember { mutableStateOf(item.selected) }
+
+    LaunchedEffect(state) {
+        galleryViewModel.onSelectAllClicked(state.selectAllClicked)
+    }
+    LaunchedEffect(checked) {
+        snapshotFlow { checked }.collect {
+            galleryViewModel.onItemCheckedChange(it, item)
+        }
+    }
 
     val imageLoader = ImageLoader.Builder(context)
         .components {
@@ -302,9 +311,9 @@ fun MediaItemBox(
                 modifier = Modifier
                     .offset(x = 5.dp, y = (-10).dp)
                     .align(Alignment.TopEnd),
-                checked = checked,
+                checked = item.selected,
                 onCheckedChange = {
-                    galleryViewModel.onItemCheckedChange(it,item)
+                    checked = it
                 }
             )
         }

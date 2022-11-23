@@ -178,7 +178,7 @@ class VideoCaptureManager private constructor(private val builder: Builder) :
 
                 //Create Preview use case
                 val preview: Preview = Preview.Builder()
-                    .setTargetAspectRatio(quality.getAspectRatio(quality))
+                    .setTargetAspectRatio(getAspectRatio(quality))
                     .build()
                     .apply { setSurfaceProvider(cameraPreview.surfaceProvider) }
 

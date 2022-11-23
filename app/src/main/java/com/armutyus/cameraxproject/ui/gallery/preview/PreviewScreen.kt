@@ -31,7 +31,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImagePainter
@@ -306,12 +305,16 @@ private fun VideoPlaybackContent(
         val videoPlayer = remember(context) { ExoPlayer.Builder(context).build() }
         DisposableEffect(
             AndroidView(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .systemBarsPadding(),
                 factory = {
                     playerView = PlayerView(it)
                     playerView.apply {
                         this!!.player = videoPlayer
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                         setShowNextButton(false)
                         setShowPreviousButton(false)
                         controllerShowTimeoutMs = 3000

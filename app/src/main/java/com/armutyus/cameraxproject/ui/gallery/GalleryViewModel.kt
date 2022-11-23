@@ -8,8 +8,6 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.core.net.toUri
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.R
@@ -38,17 +36,13 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
 
-    private val _updateInt: MutableLiveData<Int> = MutableLiveData(0)
-    val updateInt: LiveData<Int>
-        get() = _updateInt
-
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
             is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item)
             is GalleryEvent.ShareTapped -> onShareTapped(galleryEvent.context)
 
             GalleryEvent.FabClicked -> onFabClicked()
-            GalleryEvent.SelectAllClicked -> onSelectAllClicked()
+            GalleryEvent.SelectAllClicked -> changeSelectAllState()
             GalleryEvent.ItemLongClicked -> onItemLongClicked()
             GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
             GalleryEvent.DeleteTapped -> deleteSelectedItems()
@@ -59,7 +53,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         loadMedia()
     }
 
-    fun loadMedia() {
+    private fun loadMedia() {
         viewModelScope.launch {
             val media = mutableListOf<MediaItem>()
 
@@ -91,7 +85,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
 
             _mediaItems.value += groupedMedia
-            _updateInt.value = updateInt.value?.plus(1)
         }
     }
 
@@ -102,15 +95,36 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         }
     }
 
-    private fun onSelectAllClicked() {
+    private fun changeSelectAllState() {
+        if (_galleryState.value.selectAllClicked) {
+            _galleryState.update {
+                it.copy( selectAllClicked = false )
+            }
+        } else {
+            _galleryState.update {
+                it.copy( selectAllClicked = true )
+            }
+        }
+    }
+
+    fun onSelectAllClicked(checked: Boolean) {
         viewModelScope.launch {
-            _mediaItems.value.forEach {
-                it.value.forEach { mediaItem ->
-                    mediaItem.selected = true
-                    _selectedItems.value.add(mediaItem)
+            _selectedItems.value.clear()
+            if (checked) {
+                _mediaItems.value.forEach {
+                    it.value.forEach { mediaItem ->
+                        mediaItem.selected = true
+                        _selectedItems.value.add(mediaItem)
+                    }
+                }
+            } else {
+                _mediaItems.value.forEach {
+                    it.value.forEach { mediaItem ->
+                        mediaItem.selected = false
+                        _selectedItems.value.clear()
+                    }
                 }
             }
-            _updateInt.value = updateInt.value?.plus(1)
         }
     }
 
@@ -133,13 +147,19 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     }
 
     private fun cancelSelectableMode() {
-        _galleryState.update {
-            it.copy(
-                selectableMode = false
-            )
-        }
         viewModelScope.launch {
             _selectedItems.value.clear()
+            _mediaItems.value.forEach {
+                it.value.forEach { mediaItem ->
+                    mediaItem.selected = false
+                }
+            }
+            _galleryState.update {
+                it.copy(
+                    selectableMode = false,
+                    selectAllClicked = false
+                )
+            }
         }
     }
 
@@ -157,9 +177,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
                     item.selected = false
                     _selectedItems.value.remove(item)
                 }
-            }
-            _galleryState.update {
-                it.copy(checked = checked)
             }
         }
     }
