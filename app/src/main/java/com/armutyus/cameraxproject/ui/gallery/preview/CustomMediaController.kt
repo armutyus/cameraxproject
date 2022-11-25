@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +38,7 @@ fun CustomMediaController(
 
     val duration = remember(totalDuration()) { totalDuration().coerceAtLeast(0) }
 
-    val timer = remember(videoTimer()) { videoTimer() }
+    val timer = rememberUpdatedState(newValue = videoTimer())
 
     val buffer = remember(bufferedPercentage()) { bufferedPercentage() }
 
@@ -131,7 +132,7 @@ fun CustomMediaController(
                     )
 
                     Slider(
-                        value = timer.toFloat(),
+                        value = timer.value.toFloat(),
                         onValueChange = {
                             onSeekChanged.invoke(it)
                         },
@@ -178,7 +179,7 @@ fun CustomMediaController(
                             ),
                         isFullScreen = isFullScreen
                     ) {
-                        onFullScreenToggle(isFullScreen)
+                        onFullScreenToggle(isFullScreen.not())
                     }
                 }
             }

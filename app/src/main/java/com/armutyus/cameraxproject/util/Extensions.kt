@@ -5,17 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.view.HapticFeedbackConstants
 import android.view.View
-import androidx.camera.core.AspectRatio
-import androidx.camera.video.Quality
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalContext
-import com.armutyus.cameraxproject.util.Util.Companion.RATIO_16_9_VALUE
-import com.armutyus.cameraxproject.util.Util.Companion.RATIO_4_3_VALUE
 import java.util.concurrent.TimeUnit
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 fun View.vibrate(feedbackConstant: Int) {
     // Either this needs to be set to true, or android:hapticFeedbackEnabled="true" needs to be set in XML

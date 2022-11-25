@@ -1,9 +1,6 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
 import android.net.Uri
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -22,16 +19,13 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toFile
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
@@ -43,9 +37,12 @@ import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEffect
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_FORWARD_5
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_REPLAY_5
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
@@ -60,6 +57,7 @@ fun PreviewScreen(
 ) {
     val context = LocalContext.current
     val media by galleryViewModel.mediaItems.collectAsState()
+    val state by previewViewModel.previewScreenState.collectAsState()
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -263,7 +261,18 @@ fun PreviewScreen(
                             }
                         }
                         MediaItem.Type.VIDEO -> {
-                            VideoPlaybackContent(currentList[page].uri)
+                            VideoPlaybackContent(
+                                currentList[page].uri,
+                                state.isFullScreen,
+                                {
+                                    previewViewModel.onEvent(
+                                        PreviewScreenEvent.FullScreenToggleTapped(
+                                            state.isFullScreen
+                                        )
+                                    )
+                                },
+                                { navController.popBackStack() }
+                            )
                         }
                         else -> onShowMessage(GENERAL_ERROR_MESSAGE)
                     }
@@ -274,6 +283,52 @@ fun PreviewScreen(
 }
 
 @UnstableApi
+@Composable
+private fun VideoPlaybackContent(
+    filePath: Uri?,
+    isFullScreen: Boolean,
+    onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
+    navigateBack: () -> Unit,
+) {
+    val systemUiController = rememberSystemUiController()
+    LaunchedEffect(isFullScreen) {
+        systemUiController.isSystemBarsVisible = !isFullScreen
+    }
+    val context = LocalContext.current
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context)
+            .setSeekBackIncrementMs(VIDEO_REPLAY_5)
+            .setSeekForwardIncrementMs(VIDEO_FORWARD_5)
+            .build()
+    }
+
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(key1 = lifecycle) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                exoPlayer.pause()
+                super.onStop(owner)
+            }
+        }
+
+        lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycle.removeObserver(observer)
+            exoPlayer.release()
+        }
+    }
+
+    CustomPlayerView(
+        filePath = filePath,
+        videoPlayer = exoPlayer,
+        isFullScreen = isFullScreen,
+        onFullScreenToggle = onFullScreenToggle,
+        navigateBack = navigateBack,
+    )
+}
+
+/*@UnstableApi
 @Composable
 private fun VideoPlaybackContent(
     filePath: Uri?
@@ -306,7 +361,7 @@ private fun VideoPlaybackContent(
         DisposableEffect(
             AndroidView(
                 modifier = Modifier
-                    .systemBarsPadding(),
+                    .fillMaxSize(),
                 factory = {
                     playerView = PlayerView(it)
                     playerView.apply {
@@ -344,4 +399,4 @@ private fun VideoPlaybackContent(
             }
         }
     }
-}
+}*/

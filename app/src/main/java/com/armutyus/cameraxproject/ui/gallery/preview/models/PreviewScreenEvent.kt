@@ -7,6 +7,7 @@ sealed class PreviewScreenEvent {
 
     data class ShareTapped(val context: Context, val file: File) : PreviewScreenEvent()
     data class DeleteTapped(val file: File) : PreviewScreenEvent()
+    data class FullScreenToggleTapped(val isFullScreen: Boolean) : PreviewScreenEvent()
     object EditTapped : PreviewScreenEvent()
 
 }

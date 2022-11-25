@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEffect
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
+import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,6 +21,9 @@ class PreviewViewModel : ViewModel() {
     private val _previewEffect = MutableSharedFlow<PreviewScreenEffect>()
     val previewEffect: SharedFlow<PreviewScreenEffect> = _previewEffect
 
+    private val _previewScreenState = MutableStateFlow(PreviewScreenState())
+    val previewScreenState: StateFlow<PreviewScreenState> = _previewScreenState
+
     fun onEvent(previewScreenEvent: PreviewScreenEvent) {
         when (previewScreenEvent) {
             is PreviewScreenEvent.ShareTapped -> onShareTapped(
@@ -27,6 +31,9 @@ class PreviewViewModel : ViewModel() {
                 previewScreenEvent.file
             )
             is PreviewScreenEvent.DeleteTapped -> onDeleteTapped(previewScreenEvent.file)
+            is PreviewScreenEvent.FullScreenToggleTapped -> onFullScreenToggleTapped(
+                previewScreenEvent.isFullScreen
+            )
             PreviewScreenEvent.EditTapped -> onEditTapped()
         }
     }
@@ -68,6 +75,18 @@ class PreviewViewModel : ViewModel() {
                 }
             } else {
                 Toast.makeText(context, R.string.file_error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun onFullScreenToggleTapped(isFullScreen: Boolean) {
+        if (isFullScreen) {
+            _previewScreenState.update {
+                it.copy(isFullScreen = false)
+            }
+        } else {
+            _previewScreenState.update {
+                it.copy(isFullScreen = true)
             }
         }
     }

@@ -21,13 +21,11 @@ class Util {
         const val RATIO_16_9_VALUE = 16.0 / 9.0
         const val CAPTURE_FAIL = "Image capture failed."
         const val GENERAL_ERROR_MESSAGE = "Something went wrong."
-        const val PHOTO_MODE = 0
         const val VIDEO_MODE = 6
         const val UNKNOWN_ORIENTATION = -1
 
         const val GALLERY_ROUTE = "gallery_screen"
         const val PHOTO_ROUTE = "photo_screen"
-        const val PREVIEW_ROUTE = "preview_screen/{filePath}"
         const val SETTINGS_ROUTE = "settings_screen"
         const val VIDEO_ROUTE = "video_screen"
 
@@ -36,6 +34,10 @@ class Util {
         const val TIMER_10S = 2
         const val DELAY_3S = 3000L
         const val DELAY_10S = 10000L
+
+        const val VIDEO_CONTROLS_VISIBILITY = 3000L
+        const val VIDEO_REPLAY_5 = 5000L
+        const val VIDEO_FORWARD_5 = 5000L
 
     }
 

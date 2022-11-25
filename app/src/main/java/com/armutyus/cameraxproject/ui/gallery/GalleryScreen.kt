@@ -29,7 +29,6 @@ import coil.decode.VideoFrameDecoder
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.*
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
-import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +41,10 @@ fun GalleryScreen(
 
     val state by galleryViewModel.galleryState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
-    val groupedPhotos = media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }.groupBy { it.takenTime }
-    val groupedVideos = media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }.groupBy { it.takenTime }
+    val groupedPhotos =
+        media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }.groupBy { it.takenTime }
+    val groupedVideos =
+        media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }.groupBy { it.takenTime }
 
     val context = LocalContext.current
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
@@ -180,7 +181,7 @@ fun GalleryScreen(
                     MediaItem.Filter.ALL -> media
                     MediaItem.Filter.PHOTOS -> groupedPhotos
                     MediaItem.Filter.VIDEOS -> groupedVideos
-                                                    },
+                },
                 selectableMode = state.selectableMode,
                 galleryViewModel = galleryViewModel,
                 onEvent = galleryViewModel::onEvent
@@ -224,7 +225,13 @@ fun GalleryScreenContent(
                             context = context,
                             selectableMode = selectableMode,
                             galleryViewModel = galleryViewModel,
-                            onItemClicked = { if(!selectableMode) onEvent(GalleryEvent.ItemClicked(it)) }
+                            onItemClicked = {
+                                if (!selectableMode) onEvent(
+                                    GalleryEvent.ItemClicked(
+                                        it
+                                    )
+                                )
+                            }
                         ) { onEvent(GalleryEvent.ItemLongClicked) }
                     }
                 }
@@ -245,7 +252,7 @@ fun MediaItemBox(
 ) {
 
     val state by galleryViewModel.galleryState.collectAsState()
-    var checked by remember { mutableStateOf(item.selected) }
+    var checked by rememberSaveable { mutableStateOf(item.selected) }
 
     LaunchedEffect(state) {
         galleryViewModel.onSelectAllClicked(state.selectAllClicked)

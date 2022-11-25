@@ -181,7 +181,7 @@ fun VideoPauseIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         ),
         content = {
             Icon(
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(96.dp),
                 imageVector = Icons.Sharp.PauseCircle,
                 contentDescription = stringResource(id = R.string.pause_video)
             )
@@ -201,7 +201,7 @@ fun VideoPlayIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
         ),
         content = {
             Icon(
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(96.dp),
                 imageVector = Icons.Sharp.PlayCircle,
                 contentDescription = stringResource(id = R.string.play_video)
             )
@@ -248,7 +248,11 @@ fun VideoForwardIcon(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 }
 
 @Composable
-fun FullScreenToggleIcon(modifier: Modifier = Modifier, isFullScreen: Boolean, onTapped: () -> Unit) {
+fun FullScreenToggleIcon(
+    modifier: Modifier = Modifier,
+    isFullScreen: Boolean,
+    onTapped: () -> Unit
+) {
     IconButton(
         modifier = Modifier
             .then(modifier),

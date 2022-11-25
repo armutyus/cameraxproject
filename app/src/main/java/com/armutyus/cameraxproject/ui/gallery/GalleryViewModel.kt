@@ -98,11 +98,11 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private fun changeSelectAllState() {
         if (_galleryState.value.selectAllClicked) {
             _galleryState.update {
-                it.copy( selectAllClicked = false )
+                it.copy(selectAllClicked = false)
             }
         } else {
             _galleryState.update {
-                it.copy( selectAllClicked = true )
+                it.copy(selectAllClicked = true)
             }
         }
     }
