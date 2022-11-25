@@ -34,7 +34,9 @@ class PreviewViewModel : ViewModel() {
             is PreviewScreenEvent.FullScreenToggleTapped -> onFullScreenToggleTapped(
                 previewScreenEvent.isFullScreen
             )
+            is PreviewScreenEvent.ChangeBarState -> onChangeBarState(previewScreenEvent.zoomState)
             PreviewScreenEvent.EditTapped -> onEditTapped()
+            PreviewScreenEvent.PlayerViewTapped -> onPlayerViewTapped()
         }
     }
 
@@ -87,6 +89,36 @@ class PreviewViewModel : ViewModel() {
         } else {
             _previewScreenState.update {
                 it.copy(isFullScreen = true)
+            }
+        }
+    }
+
+    private fun onPlayerViewTapped() {
+        if (_previewScreenState.value.showBars && _previewScreenState.value.showMediaController) {
+            _previewScreenState.update {
+                it.copy(showBars = false, showMediaController = false)
+            }
+        } else {
+            _previewScreenState.update {
+                it.copy(showBars = true, showMediaController = true)
+            }
+        }
+    }
+
+    private fun onChangeBarState(zoomState: Boolean) {
+        if (zoomState) {
+            _previewScreenState.update {
+                it.copy(showBars = false)
+            }
+        } else {
+            if (_previewScreenState.value.showBars) {
+                _previewScreenState.update {
+                    it.copy(showBars = false)
+                }
+            } else {
+                _previewScreenState.update {
+                    it.copy(showBars = true)
+                }
             }
         }
     }

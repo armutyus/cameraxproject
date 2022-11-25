@@ -263,7 +263,7 @@ fun FullScreenToggleIcon(
         content = {
             Icon(
                 modifier = Modifier.size(64.dp),
-                imageVector = if (isFullScreen) Icons.Sharp.Fullscreen else Icons.Sharp.FullscreenExit,
+                imageVector = if (isFullScreen) Icons.Sharp.FullscreenExit else Icons.Sharp.Fullscreen,
                 contentDescription = stringResource(id = R.string.fullscreen_toggle)
             )
         }

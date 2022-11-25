@@ -4,15 +4,15 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player.STATE_ENDED
 import com.armutyus.cameraxproject.util.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -20,7 +20,7 @@ fun CustomMediaController(
     modifier: Modifier = Modifier,
     isVisible: () -> Boolean,
     isPlaying: () -> Boolean,
-    videoTimer: () -> Long,
+    videoTimer: () -> Float,
     bufferedPercentage: () -> Int,
     playbackState: () -> Int,
     totalDuration: () -> Long,
@@ -38,11 +38,20 @@ fun CustomMediaController(
 
     val duration = remember(totalDuration()) { totalDuration().coerceAtLeast(0) }
 
-    val timer = rememberUpdatedState(newValue = videoTimer())
+    val timer = remember(videoTimer()) { videoTimer() }
 
     val buffer = remember(bufferedPercentage()) { bufferedPercentage() }
 
     val playerState = remember(playbackState()) { playbackState() }
+
+    var sliderTimer by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(visible) {
+        while (isActive) {
+            sliderTimer = timer
+            delay(200)
+        }
+    }
 
     AnimatedVisibility(
         modifier = modifier,
@@ -55,16 +64,6 @@ fun CustomMediaController(
                 .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f))
         ) {
 
-            val controlButtonModifier: Modifier = remember(isFullScreen) {
-                if (isFullScreen) {
-                    Modifier
-                        .padding(horizontal = 8.dp)
-                        .size(40.dp)
-                } else {
-                    Modifier.size(32.dp)
-                }
-            }
-
             Row(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -76,29 +75,29 @@ fun CustomMediaController(
                 }
             ) {
 
-                VideoReplayIcon(modifier = controlButtonModifier) {
+                VideoReplayIcon {
                     onReplay()
                 }
 
                 when {
                     playing -> {
-                        VideoPauseIcon(modifier = controlButtonModifier) {
+                        VideoPauseIcon {
                             onPauseToggle()
                         }
                     }
                     playing.not() && playerState == STATE_ENDED -> {
-                        VideoPlayIcon(modifier = controlButtonModifier) {
+                        VideoPlayIcon {
                             onPauseToggle()
                         }
                     }
                     else -> {
-                        VideoPlayIcon(modifier = controlButtonModifier) {
+                        VideoPlayIcon {
                             onPauseToggle()
                         }
                     }
                 }
 
-                VideoForwardIcon(modifier = controlButtonModifier) {
+                VideoForwardIcon {
                     onForward()
                 }
 
@@ -132,8 +131,9 @@ fun CustomMediaController(
                     )
 
                     Slider(
-                        value = timer.value.toFloat(),
+                        value = sliderTimer,
                         onValueChange = {
+                            //sliderTimer = it
                             onSeekChanged.invoke(it)
                         },
                         valueRange = 0f..duration.toFloat(),

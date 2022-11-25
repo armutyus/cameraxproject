@@ -63,7 +63,6 @@ fun PreviewScreen(
     var offsetY by remember { mutableStateOf(0f) }
     var rotationState by remember { mutableStateOf(0f) }
     var zoomState by remember { mutableStateOf(false) }
-    var showBars by remember { mutableStateOf(false) }
 
     val currentFile = Uri.parse(filePath).toFile()
     val fileName = currentFile.nameWithoutExtension
@@ -101,7 +100,7 @@ fun PreviewScreen(
 
     Scaffold(
         topBar = {
-            if (showBars)
+            if (state.showBars)
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -123,7 +122,7 @@ fun PreviewScreen(
                 )
         },
         bottomBar = {
-            if (showBars) {
+            if (state.showBars) {
                 NavigationBar {
                     bottomNavItems.forEach { bottomNavItem ->
                         NavigationBarItem(
@@ -205,11 +204,9 @@ fun PreviewScreen(
                                         zoomState = false
                                         println("x: ${offset.x}")
                                         println("y: ${offset.y}")
-                                        println("varx: $offsetX")
-                                        println("vary: $offsetY")
                                     }
                                 },
-                                onTap = { if (!zoomState) showBars = !showBars }
+                                onTap = { if (!zoomState) previewViewModel.onEvent(PreviewScreenEvent.ChangeBarState(zoomState)) }
                             )
                         }
                         .pointerInput(Unit) {
@@ -224,7 +221,7 @@ fun PreviewScreen(
                                         offsetY += offset.y
                                         rotationState += event.calculateRotation()
                                         zoomState = true
-                                        showBars = false
+                                        previewViewModel.onEvent(PreviewScreenEvent.ChangeBarState(zoomState))
                                     } else {
                                         scale = 1f
                                         offsetX = 0f
@@ -264,6 +261,7 @@ fun PreviewScreen(
                             VideoPlaybackContent(
                                 currentList[page].uri,
                                 state.isFullScreen,
+                                state.showMediaController,
                                 {
                                     previewViewModel.onEvent(
                                         PreviewScreenEvent.FullScreenToggleTapped(
@@ -271,6 +269,7 @@ fun PreviewScreen(
                                         )
                                     )
                                 },
+                                { previewViewModel.onEvent(PreviewScreenEvent.PlayerViewTapped) } ,
                                 { navController.popBackStack() }
                             )
                         }
@@ -287,7 +286,9 @@ fun PreviewScreen(
 private fun VideoPlaybackContent(
     filePath: Uri?,
     isFullScreen: Boolean,
+    shouldShowController: Boolean,
     onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
+    onPlayerClick: () -> Unit,
     navigateBack: () -> Unit,
 ) {
     val systemUiController = rememberSystemUiController()
@@ -323,7 +324,9 @@ private fun VideoPlaybackContent(
         filePath = filePath,
         videoPlayer = exoPlayer,
         isFullScreen = isFullScreen,
+        shouldShowController = shouldShowController,
         onFullScreenToggle = onFullScreenToggle,
+        onPlayerClick = onPlayerClick,
         navigateBack = navigateBack,
     )
 }

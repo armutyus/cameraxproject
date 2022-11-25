@@ -25,7 +25,9 @@ fun CustomPlayerView(
     modifier: Modifier = Modifier,
     videoPlayer: ExoPlayer,
     isFullScreen: Boolean,
+    shouldShowController: Boolean,
     onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
+    onPlayerClick: () -> Unit,
     navigateBack: (() -> Unit)? = null
 ) {
 
@@ -39,19 +41,19 @@ fun CustomPlayerView(
 
     Box(modifier = modifier) {
 
-        var shouldShowControls by remember { mutableStateOf(false) }
+        var shouldShowControls by remember { mutableStateOf(shouldShowController) }
 
         var isPlaying by remember { mutableStateOf(videoPlayer.isPlaying) }
 
         var playbackState by remember { mutableStateOf(videoPlayer.playbackState) }
 
-        var videoTimer by remember { mutableStateOf(0L) }
+        var videoTimer by remember { mutableStateOf(0f) }
 
         var totalDuration by remember { mutableStateOf(0L) }
 
         var bufferedPercentage by remember { mutableStateOf(0) }
 
-        LaunchedEffect(true) {
+        LaunchedEffect(shouldShowController) {
             if (shouldShowControls) {
                 delay(VIDEO_CONTROLS_VISIBILITY)
                 shouldShowControls = false
@@ -60,11 +62,20 @@ fun CustomPlayerView(
 
         DisposableEffect(Unit) {
             val listener = object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    super.onPlaybackStateChanged(playbackState)
+                    isPlaying = playbackState == Player.STATE_READY && videoPlayer.isPlaying
+                }
+
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    super.onPlayWhenReadyChanged(playWhenReady, reason)
+                    isPlaying = playWhenReady
+                }
                 override fun onEvents(player: Player, events: Player.Events) {
                     super.onEvents(player, events)
                     isPlaying = player.isPlaying
                     totalDuration = player.duration
-                    videoTimer = player.currentPosition
+                    videoTimer = player.currentPosition.toFloat()
                     bufferedPercentage = player.bufferedPercentage
                     playbackState = player.playbackState
                 }
@@ -82,12 +93,12 @@ fun CustomPlayerView(
             modifier = Modifier.fillMaxSize(),
             videoPlayer = videoPlayer
         ) {
-            shouldShowControls = shouldShowControls.not()
+            onPlayerClick()
         }
 
         CustomMediaController(
             modifier = Modifier.fillMaxSize(),
-            isVisible = { shouldShowControls },
+            isVisible = { shouldShowController },
             isPlaying = { isPlaying },
             playbackState = { playbackState },
             totalDuration = { totalDuration },
