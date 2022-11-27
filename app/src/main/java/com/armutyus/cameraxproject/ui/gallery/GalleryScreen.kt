@@ -1,6 +1,8 @@
 package com.armutyus.cameraxproject.ui.gallery
 
+import android.app.Activity
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,7 +48,7 @@ fun GalleryScreen(
     val groupedVideos =
         media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }.groupBy { it.takenTime }
 
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
     val bottomNavItems = listOf(
         BottomNavItem.Gallery,
@@ -58,6 +60,14 @@ fun GalleryScreen(
         BottomNavItem.Delete,
         BottomNavItem.Share
     )
+
+    BackHandler {
+        if (state.selectableMode) {
+            galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode)
+        } else {
+            context.finish()
+        }
+    }
 
     LaunchedEffect(galleryViewModel) {
         galleryViewModel.galleryEffect.collect {
@@ -252,7 +262,7 @@ fun MediaItemBox(
 ) {
 
     val state by galleryViewModel.galleryState.collectAsState()
-    var checked by rememberSaveable { mutableStateOf(item.selected) }
+    var checked by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state) {
         galleryViewModel.onSelectAllClicked(state.selectAllClicked)

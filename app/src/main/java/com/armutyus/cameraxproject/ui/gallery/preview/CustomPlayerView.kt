@@ -16,8 +16,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_CONTROLS_VISIBILITY
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 @Composable
 fun CustomPlayerView(
@@ -27,6 +28,7 @@ fun CustomPlayerView(
     isFullScreen: Boolean,
     shouldShowController: Boolean,
     onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
+    hideController: (isPlaying: Boolean) -> Unit,
     onPlayerClick: () -> Unit,
     navigateBack: (() -> Unit)? = null
 ) {
@@ -41,8 +43,6 @@ fun CustomPlayerView(
 
     Box(modifier = modifier) {
 
-        var shouldShowControls by remember { mutableStateOf(shouldShowController) }
-
         var isPlaying by remember { mutableStateOf(videoPlayer.isPlaying) }
 
         var playbackState by remember { mutableStateOf(videoPlayer.playbackState) }
@@ -53,29 +53,13 @@ fun CustomPlayerView(
 
         var bufferedPercentage by remember { mutableStateOf(0) }
 
-        LaunchedEffect(shouldShowController) {
-            if (shouldShowControls) {
-                delay(VIDEO_CONTROLS_VISIBILITY)
-                shouldShowControls = false
-            }
-        }
-
         DisposableEffect(Unit) {
             val listener = object : Player.Listener {
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    super.onPlaybackStateChanged(playbackState)
-                    isPlaying = playbackState == Player.STATE_READY && videoPlayer.isPlaying
-                }
-
-                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                    super.onPlayWhenReadyChanged(playWhenReady, reason)
-                    isPlaying = playWhenReady
-                }
                 override fun onEvents(player: Player, events: Player.Events) {
                     super.onEvents(player, events)
                     isPlaying = player.isPlaying
                     totalDuration = player.duration
-                    videoTimer = player.currentPosition.toFloat()
+                    videoTimer = player.contentPosition.toFloat()
                     bufferedPercentage = player.bufferedPercentage
                     playbackState = player.playbackState
                 }
@@ -86,6 +70,17 @@ fun CustomPlayerView(
             onDispose {
                 videoPlayer.removeListener(listener)
             }
+        }
+
+        LaunchedEffect(true) {
+            while (isActive) {
+                videoTimer = videoPlayer.contentPosition.toFloat()
+                delay(50)
+            }
+        }
+
+        LaunchedEffect(true) {
+            if (isPlaying) hideController(true)
         }
 
         VideoPlayer(

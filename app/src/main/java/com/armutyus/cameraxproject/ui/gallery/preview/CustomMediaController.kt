@@ -44,15 +44,6 @@ fun CustomMediaController(
 
     val playerState = remember(playbackState()) { playbackState() }
 
-    var sliderTimer by remember { mutableStateOf(0f) }
-
-    LaunchedEffect(visible) {
-        while (isActive) {
-            sliderTimer = timer
-            delay(200)
-        }
-    }
-
     AnimatedVisibility(
         modifier = modifier,
         visible = visible,
@@ -131,9 +122,8 @@ fun CustomMediaController(
                     )
 
                     Slider(
-                        value = sliderTimer,
+                        value = timer,
                         onValueChange = {
-                            //sliderTimer = it
                             onSeekChanged.invoke(it)
                         },
                         valueRange = 0f..duration.toFloat(),

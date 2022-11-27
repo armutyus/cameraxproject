@@ -12,6 +12,8 @@ import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEffect
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_CONTROLS_VISIBILITY
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
@@ -35,6 +37,7 @@ class PreviewViewModel : ViewModel() {
                 previewScreenEvent.isFullScreen
             )
             is PreviewScreenEvent.ChangeBarState -> onChangeBarState(previewScreenEvent.zoomState)
+            is PreviewScreenEvent.HideController -> hideController(previewScreenEvent.isPlaying)
             PreviewScreenEvent.EditTapped -> onEditTapped()
             PreviewScreenEvent.PlayerViewTapped -> onPlayerViewTapped()
         }
@@ -84,11 +87,11 @@ class PreviewViewModel : ViewModel() {
     private fun onFullScreenToggleTapped(isFullScreen: Boolean) {
         if (isFullScreen) {
             _previewScreenState.update {
-                it.copy(isFullScreen = false)
+                it.copy(isFullScreen = false, showBars = true, showMediaController = true)
             }
         } else {
             _previewScreenState.update {
-                it.copy(isFullScreen = true)
+                it.copy(isFullScreen = true, showBars = false, showMediaController = false)
             }
         }
     }
@@ -118,6 +121,20 @@ class PreviewViewModel : ViewModel() {
             } else {
                 _previewScreenState.update {
                     it.copy(showBars = true)
+                }
+            }
+        }
+    }
+
+    private fun hideController(isPlaying: Boolean) {
+        viewModelScope.launch {
+            if (isPlaying) {
+                delay(VIDEO_CONTROLS_VISIBILITY)
+                _previewScreenState.update {
+                    it.copy(
+                        showMediaController = false,
+                        showBars = false
+                    )
                 }
             }
         }

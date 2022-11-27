@@ -165,11 +165,11 @@ fun PreviewScreen(
                 }
             }
         }
-    ) {
+    ) { paddingValues ->
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(paddingValues)
         ) {
             val currentList = media.values.flatten()
             val count = currentList.size
@@ -206,7 +206,11 @@ fun PreviewScreen(
                                         println("y: ${offset.y}")
                                     }
                                 },
-                                onTap = { if (!zoomState) previewViewModel.onEvent(PreviewScreenEvent.ChangeBarState(zoomState)) }
+                                onTap = {
+                                    if (!zoomState) previewViewModel.onEvent(
+                                        PreviewScreenEvent.ChangeBarState(zoomState)
+                                    )
+                                }
                             )
                         }
                         .pointerInput(Unit) {
@@ -221,7 +225,11 @@ fun PreviewScreen(
                                         offsetY += offset.y
                                         rotationState += event.calculateRotation()
                                         zoomState = true
-                                        previewViewModel.onEvent(PreviewScreenEvent.ChangeBarState(zoomState))
+                                        previewViewModel.onEvent(
+                                            PreviewScreenEvent.ChangeBarState(
+                                                zoomState
+                                            )
+                                        )
                                     } else {
                                         scale = 1f
                                         offsetX = 0f
@@ -269,7 +277,8 @@ fun PreviewScreen(
                                         )
                                     )
                                 },
-                                { previewViewModel.onEvent(PreviewScreenEvent.PlayerViewTapped) } ,
+                                { previewViewModel.onEvent(PreviewScreenEvent.HideController(it)) },
+                                { previewViewModel.onEvent(PreviewScreenEvent.PlayerViewTapped) },
                                 { navController.popBackStack() }
                             )
                         }
@@ -288,6 +297,7 @@ private fun VideoPlaybackContent(
     isFullScreen: Boolean,
     shouldShowController: Boolean,
     onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
+    hideController: (isPlaying: Boolean) -> Unit,
     onPlayerClick: () -> Unit,
     navigateBack: () -> Unit,
 ) {
@@ -326,6 +336,7 @@ private fun VideoPlaybackContent(
         isFullScreen = isFullScreen,
         shouldShowController = shouldShowController,
         onFullScreenToggle = onFullScreenToggle,
+        hideController = hideController,
         onPlayerClick = onPlayerClick,
         navigateBack = navigateBack,
     )
