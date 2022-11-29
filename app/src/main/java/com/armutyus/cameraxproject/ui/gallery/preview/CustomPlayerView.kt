@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
@@ -35,6 +36,11 @@ fun CustomPlayerView(
     onPlayerClick: () -> Unit,
     navigateBack: (() -> Unit)? = null
 ) {
+    var isPlaying by rememberSaveable(filePath) { mutableStateOf(videoPlayer.isPlaying) }
+    var playbackState by rememberSaveable(filePath) { mutableStateOf(videoPlayer.playbackState) }
+    var videoTimer by rememberSaveable(filePath) { mutableStateOf(0f) }
+    var totalDuration by rememberSaveable(filePath) { mutableStateOf(0L) }
+    var bufferedPercentage by rememberSaveable(filePath) { mutableStateOf(0) }
 
     BackHandler {
         if (isFullScreen) {
@@ -45,17 +51,6 @@ fun CustomPlayerView(
     }
 
     Box(modifier = modifier) {
-
-        var isPlaying by remember { mutableStateOf(videoPlayer.isPlaying) }
-
-        var playbackState by remember { mutableStateOf(videoPlayer.playbackState) }
-
-        var videoTimer by remember { mutableStateOf(0f) }
-
-        var totalDuration by remember { mutableStateOf(0L) }
-
-        var bufferedPercentage by remember { mutableStateOf(0) }
-
         DisposableEffect(videoPlayer) {
             val listener = object : Player.Listener {
                 override fun onEvents(player: Player, events: Player.Events) {
@@ -138,6 +133,7 @@ private fun VideoPlayer(
         mutableStateOf(Lifecycle.Event.ON_CREATE)
     }
     val lifecycleOwner = LocalLifecycleOwner.current
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             lifecycle = event
@@ -148,6 +144,7 @@ private fun VideoPlayer(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+
     Box(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
@@ -166,21 +163,17 @@ private fun VideoPlayer(
                         )
                         player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
                         player?.prepare()
-                    }
-                },
-                update = {
-                    it.apply {
-                        player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                    }
-                    when (lifecycle) {
-                        Lifecycle.Event.ON_PAUSE -> {
-                            it.onPause()
-                            it.player?.pause()
+
+                        when (lifecycle) {
+                            Lifecycle.Event.ON_PAUSE -> {
+                                onPause()
+                                player?.pause()
+                            }
+                            Lifecycle.Event.ON_RESUME -> {
+                                onResume()
+                            }
+                            else -> Unit
                         }
-                        Lifecycle.Event.ON_RESUME -> {
-                            it.onResume()
-                        }
-                        else -> Unit
                     }
                 }
             )

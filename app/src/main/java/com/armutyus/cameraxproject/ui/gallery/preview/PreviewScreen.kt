@@ -317,7 +317,7 @@ private fun VideoPlaybackContent(
         systemUiController.isSystemBarsVisible = !isFullScreen
     }
     val context = LocalContext.current
-    val exoPlayer = remember {
+    val exoPlayer = remember(filePath) {
         ExoPlayer.Builder(context)
             .setSeekBackIncrementMs(VIDEO_REPLAY_5)
             .setSeekForwardIncrementMs(VIDEO_FORWARD_5)
