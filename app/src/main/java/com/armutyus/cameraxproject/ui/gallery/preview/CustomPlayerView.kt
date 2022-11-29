@@ -11,14 +11,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.Player
 import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_CONTROLS_VISIBILITY
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 @Composable
 fun CustomPlayerView(
@@ -53,7 +56,7 @@ fun CustomPlayerView(
 
         var bufferedPercentage by remember { mutableStateOf(0) }
 
-        DisposableEffect(Unit) {
+        DisposableEffect(videoPlayer) {
             val listener = object : Player.Listener {
                 override fun onEvents(player: Player, events: Player.Events) {
                     super.onEvents(player, events)
@@ -79,8 +82,9 @@ fun CustomPlayerView(
             }
         }
 
-        LaunchedEffect(true) {
-            if (isPlaying) hideController(true)
+        LaunchedEffect(shouldShowController) {
+            delay(VIDEO_CONTROLS_VISIBILITY)
+            if (shouldShowController) hideController(true)
         }
 
         VideoPlayer(
@@ -130,30 +134,60 @@ private fun VideoPlayer(
     videoPlayer: ExoPlayer,
     onPlayerClick: () -> Unit
 ) {
+    var lifecycle by remember {
+        mutableStateOf(Lifecycle.Event.ON_CREATE)
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            lifecycle = event
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     Box(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
-            .clickable { onPlayerClick.invoke() }
+            .clickable { onPlayerClick() }
     ) {
-        AndroidView(
-            modifier = modifier,
-            factory = {
-                PlayerView(it).apply {
-                    player = videoPlayer
-                    useController = false
-                    layoutParams = FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                    player?.prepare()
+        DisposableEffect(
+            AndroidView(
+                modifier = modifier,
+                factory = {
+                    PlayerView(it).apply {
+                        player = videoPlayer
+                        useController = false
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
+                        player?.prepare()
+                    }
+                },
+                update = {
+                    it.apply {
+                        player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
+                    }
+                    when (lifecycle) {
+                        Lifecycle.Event.ON_PAUSE -> {
+                            it.onPause()
+                            it.player?.pause()
+                        }
+                        Lifecycle.Event.ON_RESUME -> {
+                            it.onResume()
+                        }
+                        else -> Unit
+                    }
                 }
-            },
-            update = {
-                it.apply {
-                    player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                }
+            )
+        ) {
+            onDispose {
+                videoPlayer.release()
             }
-        )
+        }
     }
 }

@@ -5,6 +5,8 @@
     <string name="permissions_required">Permissions are required to use the app.</string>
     <string name="permissions_important">These permissions are important for the app. Please grant all of them for the app to function properly.</string>
     <string name="permissions_needed">Permissions needed!</string>
+    <string name="delete_items">Are you sure to delete the selected items?</string>
+    <string name="no_item">No item selected.</string>
     <string name="deny">Deny</string>
     <string name="open_camera">Open Camera</string>
     <string name="gallery">Gallery</string>

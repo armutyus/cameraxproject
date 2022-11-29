@@ -127,15 +127,12 @@ class PreviewViewModel : ViewModel() {
     }
 
     private fun hideController(isPlaying: Boolean) {
-        viewModelScope.launch {
-            if (isPlaying) {
-                delay(VIDEO_CONTROLS_VISIBILITY)
-                _previewScreenState.update {
-                    it.copy(
-                        showMediaController = false,
-                        showBars = false
-                    )
-                }
+        if (isPlaying) {
+            _previewScreenState.update {
+                it.copy(
+                    showMediaController = false,
+                    showBars = false
+                )
             }
         }
     }

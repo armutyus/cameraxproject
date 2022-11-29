@@ -1,6 +1,9 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -15,13 +18,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toFile
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
@@ -100,7 +100,12 @@ fun PreviewScreen(
 
     Scaffold(
         topBar = {
-            if (state.showBars)
+            AnimatedVisibility(
+                modifier = Modifier,
+                visible = state.showBars,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -120,9 +125,15 @@ fun PreviewScreen(
                         }
                     }
                 )
+            }
         },
         bottomBar = {
-            if (state.showBars) {
+            AnimatedVisibility(
+                modifier = Modifier,
+                visible = state.showBars,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 NavigationBar {
                     bottomNavItems.forEach { bottomNavItem ->
                         NavigationBarItem(
@@ -313,23 +324,6 @@ private fun VideoPlaybackContent(
             .build()
     }
 
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(key1 = lifecycle) {
-        val observer = object : DefaultLifecycleObserver {
-            override fun onStop(owner: LifecycleOwner) {
-                exoPlayer.pause()
-                super.onStop(owner)
-            }
-        }
-
-        lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycle.removeObserver(observer)
-            exoPlayer.release()
-        }
-    }
-
     CustomPlayerView(
         filePath = filePath,
         videoPlayer = exoPlayer,
@@ -341,76 +335,3 @@ private fun VideoPlaybackContent(
         navigateBack = navigateBack,
     )
 }
-
-/*@UnstableApi
-@Composable
-private fun VideoPlaybackContent(
-    filePath: Uri?
-) {
-
-    val context = LocalContext.current
-    var lifecycle by remember {
-        mutableStateOf(Lifecycle.Event.ON_CREATE)
-    }
-    var playerView by remember(filePath) {
-        mutableStateOf<PlayerView?>(null)
-    }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            lifecycle = event
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-    ) {
-        val videoPlayer = remember(context) { ExoPlayer.Builder(context).build() }
-        DisposableEffect(
-            AndroidView(
-                modifier = Modifier
-                    .fillMaxSize(),
-                factory = {
-                    playerView = PlayerView(it)
-                    playerView.apply {
-                        this!!.player = videoPlayer
-                        layoutParams = FrameLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        setShowNextButton(false)
-                        setShowPreviousButton(false)
-                        controllerShowTimeoutMs = 3000
-                        this.player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                        this.player?.prepare()
-                    }!!
-                },
-                update = {
-                    it.apply {
-                        player?.setMediaItem(androidx.media3.common.MediaItem.fromUri(filePath!!))
-                    }
-                    when (lifecycle) {
-                        Lifecycle.Event.ON_PAUSE -> {
-                            it.onPause()
-                            it.player?.pause()
-                        }
-                        Lifecycle.Event.ON_RESUME -> {
-                            it.onResume()
-                        }
-                        else -> Unit
-                    }
-                }
-            )
-        ) {
-            onDispose {
-                videoPlayer.release()
-            }
-        }
-    }
-}*/

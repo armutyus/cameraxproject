@@ -25,13 +25,13 @@ import kotlinx.coroutines.launch
 class GalleryViewModel constructor(private val fileManager: FileManager) : ViewModel() {
 
     private val _galleryState = MutableStateFlow(GalleryState())
-    val galleryState: StateFlow<GalleryState> = _galleryState
+    val galleryState = _galleryState.asStateFlow()
 
     private val _mediaItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
-    val mediaItems: StateFlow<Map<String, List<MediaItem>>> = _mediaItems
+    val mediaItems = _mediaItems.asStateFlow()
 
     private val _selectedItems = MutableStateFlow(mutableListOf<MediaItem>())
-    val selectedItems: StateFlow<List<MediaItem>> = _selectedItems
+    val selectedItems = _selectedItems.asStateFlow()
 
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
     val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
@@ -45,7 +45,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             GalleryEvent.SelectAllClicked -> changeSelectAllState()
             GalleryEvent.ItemLongClicked -> onItemLongClicked()
             GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
-            GalleryEvent.DeleteTapped -> deleteSelectedItems()
+            GalleryEvent.CancelDelete -> cancelDeleteAction()
+            GalleryEvent.DeleteTapped -> onDeleteTapped()
+            GalleryEvent.DeleteSelectedItems -> deleteSelectedItems()
         }
     }
 
@@ -121,9 +123,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
                 _mediaItems.value.forEach {
                     it.value.forEach { mediaItem ->
                         mediaItem.selected = false
-                        _selectedItems.value.clear()
                     }
                 }
+                _selectedItems.value.clear()
             }
         }
     }
@@ -181,10 +183,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         }
     }
 
-    fun itemSelectedCheck(item: MediaItem): Boolean {
-        return item.selected
-    }
-
     private fun onShareTapped(context: Context) {
         viewModelScope.launch {
             if (_selectedItems.value.isNotEmpty()) {
@@ -220,11 +218,24 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         }
     }
 
+    private fun cancelDeleteAction() {
+        _galleryState.update {
+            it.copy(deleteTapped = false)
+        }
+    }
+
+    private fun onDeleteTapped() {
+        _galleryState.update {
+            it.copy(deleteTapped = true)
+        }
+    }
+
     private fun deleteSelectedItems() {
         viewModelScope.launch {
             _selectedItems.value.forEach {
                 it.uri?.toFile()?.delete()
             }
+            cancelDeleteAction()
             cancelSelectableMode()
             loadMedia()
         }

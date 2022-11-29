@@ -8,6 +8,8 @@ sealed class GalleryEvent {
     data class ShareTapped(val context: Context) : GalleryEvent()
 
     object CancelSelectableMode : GalleryEvent()
+    object CancelDelete : GalleryEvent()
+    object DeleteSelectedItems : GalleryEvent()
     object DeleteTapped : GalleryEvent()
     object ItemLongClicked : GalleryEvent()
     object FabClicked : GalleryEvent()

@@ -11,8 +11,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player.STATE_ENDED
 import com.armutyus.cameraxproject.util.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable

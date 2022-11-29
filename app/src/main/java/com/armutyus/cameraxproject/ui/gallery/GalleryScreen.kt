@@ -2,6 +2,7 @@ package com.armutyus.cameraxproject.ui.gallery
 
 import android.app.Activity
 import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -43,12 +44,14 @@ fun GalleryScreen(
 
     val state by galleryViewModel.galleryState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
+    val selectedItems by galleryViewModel.selectedItems.collectAsState()
     val groupedPhotos =
         media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }.groupBy { it.takenTime }
     val groupedVideos =
         media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }.groupBy { it.takenTime }
 
-    val context = LocalContext.current as Activity
+    val context = LocalContext.current
+    val activity = LocalContext.current as Activity
     var filterContent by remember { mutableStateOf(MediaItem.Filter.ALL) }
     val bottomNavItems = listOf(
         BottomNavItem.Gallery,
@@ -65,7 +68,7 @@ fun GalleryScreen(
         if (state.selectableMode) {
             galleryViewModel.onEvent(GalleryEvent.CancelSelectableMode)
         } else {
-            context.finish()
+            activity.finish()
         }
     }
 
@@ -185,8 +188,33 @@ fun GalleryScreen(
                 .fillMaxSize()
                 .padding(it)
         ) {
+            if (state.deleteTapped) {
+                if (selectedItems.isNotEmpty()) {
+                    AlertDialog(onDismissRequest = { /* */ },
+                        title = { Text(text = stringResource(id = R.string.delete)) },
+                        text = { Text(text = stringResource(id = R.string.delete_items)) },
+                        confirmButton = {
+                            Button(onClick = { galleryViewModel.onEvent(GalleryEvent.DeleteSelectedItems) } ) {
+                                Text(text = stringResource(id = R.string.delete))
+                            }
+                        },
+                        dismissButton = {
+                            Button(onClick = {
+                                galleryViewModel.onEvent(GalleryEvent.CancelDelete)
+                            }
+                            ) {
+                                Text(text = stringResource(id = R.string.cancel))
+                            }
+                        }
+                    )
+                } else {
+                    Toast.makeText(context, stringResource(id = R.string.no_item), Toast.LENGTH_SHORT).show()
+                }
+            }
+
             GalleryScreenContent(
                 context = context,
+                state = state,
                 groupedMedia = when (filterContent) {
                     MediaItem.Filter.ALL -> media
                     MediaItem.Filter.PHOTOS -> groupedPhotos
@@ -204,6 +232,7 @@ fun GalleryScreen(
 @Composable
 fun GalleryScreenContent(
     context: Context,
+    state: GalleryState,
     groupedMedia: Map<String, List<MediaItem>>,
     selectableMode: Boolean,
     galleryViewModel: GalleryViewModel,
@@ -232,6 +261,7 @@ fun GalleryScreenContent(
                     for (media in mediaList) {
                         MediaItemBox(
                             item = media,
+                            state = state,
                             context = context,
                             selectableMode = selectableMode,
                             galleryViewModel = galleryViewModel,
@@ -254,6 +284,7 @@ fun GalleryScreenContent(
 @Composable
 fun MediaItemBox(
     item: MediaItem,
+    state: GalleryState,
     context: Context,
     selectableMode: Boolean,
     galleryViewModel: GalleryViewModel,
@@ -261,12 +292,12 @@ fun MediaItemBox(
     onItemLongClicked: () -> Unit
 ) {
 
-    val state by galleryViewModel.galleryState.collectAsState()
     var checked by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(state) {
         galleryViewModel.onSelectAllClicked(state.selectAllClicked)
     }
+
     LaunchedEffect(checked) {
         snapshotFlow { checked }.collect {
             galleryViewModel.onItemCheckedChange(it, item)
