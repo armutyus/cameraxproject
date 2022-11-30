@@ -194,7 +194,7 @@ fun GalleryScreen(
                         title = { Text(text = stringResource(id = R.string.delete)) },
                         text = { Text(text = stringResource(id = R.string.delete_items)) },
                         confirmButton = {
-                            Button(onClick = { galleryViewModel.onEvent(GalleryEvent.DeleteSelectedItems) } ) {
+                            Button(onClick = { galleryViewModel.onEvent(GalleryEvent.DeleteSelectedItems) }) {
                                 Text(text = stringResource(id = R.string.delete))
                             }
                         },
@@ -209,7 +209,11 @@ fun GalleryScreen(
                     )
                 } else {
                     galleryViewModel.onEvent(GalleryEvent.CancelDelete)
-                    Toast.makeText(context, stringResource(id = R.string.no_item), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        stringResource(id = R.string.no_item),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
 
