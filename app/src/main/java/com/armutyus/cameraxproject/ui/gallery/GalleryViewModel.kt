@@ -30,11 +30,8 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _mediaItems = MutableStateFlow(mapOf<String, List<MediaItem>>())
     val mediaItems = _mediaItems.asStateFlow()
 
-    private val _selectedItems = MutableStateFlow(mutableListOf<MediaItem>())
-    val selectedItems = _selectedItems.asStateFlow()
-
     private val _galleryEffect = MutableSharedFlow<GalleryEffect>()
-    val galleryEffect: SharedFlow<GalleryEffect> = _galleryEffect
+    val galleryEffect = _galleryEffect.asSharedFlow()
 
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
@@ -55,9 +52,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         loadMedia()
     }
 
-    private fun loadMedia() {
+    fun loadMedia() {
         viewModelScope.launch {
-            val media = mutableListOf<MediaItem>()
+            val media = mutableSetOf<MediaItem>()
 
             val photoDir = fileManager.getPrivateFileDirectory(PHOTO_DIR)
             val photos = photoDir?.listFiles()?.mapIndexed { _, file ->
@@ -81,7 +78,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
                 )
             } as List<MediaItem>
 
-            media.clear()
             media.addAll(photos + videos)
 
             val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
@@ -98,6 +94,24 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     }
 
     private fun changeSelectAllState() {
+        viewModelScope.launch {
+            when (_galleryState.value.selectAllClicked) {
+                false -> {
+                    _mediaItems.value.forEach {
+                        it.value.forEach { mediaItem ->
+                            mediaItem.selected = true
+                        }
+                    }
+                }
+                true -> {
+                    _mediaItems.value.forEach {
+                        it.value.forEach { mediaItem ->
+                            mediaItem.selected = false
+                        }
+                    }
+                }
+            }
+        }
         if (_galleryState.value.selectAllClicked) {
             _galleryState.update {
                 it.copy(selectAllClicked = false)
@@ -105,27 +119,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         } else {
             _galleryState.update {
                 it.copy(selectAllClicked = true)
-            }
-        }
-    }
-
-    fun onSelectAllClicked(checked: Boolean) {
-        viewModelScope.launch {
-            _selectedItems.value.clear()
-            if (checked) {
-                _mediaItems.value.forEach {
-                    it.value.forEach { mediaItem ->
-                        mediaItem.selected = true
-                        _selectedItems.value.add(mediaItem)
-                    }
-                }
-            } else {
-                _mediaItems.value.forEach {
-                    it.value.forEach { mediaItem ->
-                        mediaItem.selected = false
-                    }
-                }
-                _selectedItems.value.clear()
             }
         }
     }
@@ -150,44 +143,41 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
     private fun cancelSelectableMode() {
         viewModelScope.launch {
-            _selectedItems.value.clear()
             _mediaItems.value.forEach {
                 it.value.forEach { mediaItem ->
                     mediaItem.selected = false
                 }
             }
-            _galleryState.update {
-                it.copy(
-                    selectableMode = false,
-                    selectAllClicked = false
-                )
-            }
+        }
+        _galleryState.update {
+            it.copy(
+                selectableMode = false,
+                selectAllClicked = false
+            )
         }
     }
 
     fun onItemCheckedChange(checked: Boolean, item: MediaItem) {
         viewModelScope.launch {
             if (checked) {
-                val checkItem = _selectedItems.value.contains(item)
-                if (!checkItem) {
-                    item.selected = true
-                    _selectedItems.value.add(item)
-                }
+                val itemList = _mediaItems.value.values.flatten()
+                val findItem = itemList.firstOrNull { it.uri == item.uri }
+                findItem?.selected = true
             } else {
-                val checkItem = _selectedItems.value.contains(item)
-                if (checkItem) {
-                    item.selected = false
-                    _selectedItems.value.remove(item)
-                }
+                val itemList = _mediaItems.value.values.flatten()
+                val findItem = itemList.firstOrNull { it.uri == item.uri }
+                findItem?.selected = false
             }
         }
     }
 
     private fun onShareTapped(context: Context) {
         viewModelScope.launch {
-            if (_selectedItems.value.isNotEmpty()) {
+            val itemList = _mediaItems.value.values.flatten()
+            val selectedItems = itemList.filter { it.selected }
+            if (selectedItems.isNotEmpty()) {
                 val uriList = ArrayList<Uri>()
-                _selectedItems.value.forEach {
+                selectedItems.forEach {
                     val contentUri = FileProvider.getUriForFile(
                         context,
                         "com.armutyus.cameraxproject.fileprovider",
@@ -232,7 +222,9 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
 
     private fun deleteSelectedItems() {
         viewModelScope.launch {
-            _selectedItems.value.forEach {
+            val itemList = _mediaItems.value.values.flatten()
+            val selectedItems = itemList.filter { it.selected }
+            selectedItems.forEach {
                 it.uri?.toFile()?.delete()
             }
             cancelDeleteAction()

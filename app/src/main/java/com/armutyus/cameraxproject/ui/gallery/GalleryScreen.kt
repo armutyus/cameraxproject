@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.sharp.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -44,7 +43,6 @@ fun GalleryScreen(
 
     val state by galleryViewModel.galleryState.collectAsState()
     val media by galleryViewModel.mediaItems.collectAsState()
-    val selectedItems by galleryViewModel.selectedItems.collectAsState()
     val groupedPhotos =
         media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }.groupBy { it.takenTime }
     val groupedVideos =
@@ -73,6 +71,7 @@ fun GalleryScreen(
     }
 
     LaunchedEffect(galleryViewModel) {
+        galleryViewModel.loadMedia()
         galleryViewModel.galleryEffect.collect {
             when (it) {
                 is GalleryEffect.NavigateTo -> {
@@ -189,6 +188,7 @@ fun GalleryScreen(
                 .padding(it)
         ) {
             if (state.deleteTapped) {
+                val selectedItems = media.values.flatten().filter { item -> item.selected }
                 if (selectedItems.isNotEmpty()) {
                     AlertDialog(onDismissRequest = { /* */ },
                         title = { Text(text = stringResource(id = R.string.delete)) },
@@ -208,13 +208,13 @@ fun GalleryScreen(
                         }
                     )
                 } else {
+                    galleryViewModel.onEvent(GalleryEvent.CancelDelete)
                     Toast.makeText(context, stringResource(id = R.string.no_item), Toast.LENGTH_SHORT).show()
                 }
             }
 
             GalleryScreenContent(
                 context = context,
-                state = state,
                 groupedMedia = when (filterContent) {
                     MediaItem.Filter.ALL -> media
                     MediaItem.Filter.PHOTOS -> groupedPhotos
@@ -232,7 +232,6 @@ fun GalleryScreen(
 @Composable
 fun GalleryScreenContent(
     context: Context,
-    state: GalleryState,
     groupedMedia: Map<String, List<MediaItem>>,
     selectableMode: Boolean,
     galleryViewModel: GalleryViewModel,
@@ -261,7 +260,6 @@ fun GalleryScreenContent(
                     for (media in mediaList) {
                         MediaItemBox(
                             item = media,
-                            state = state,
                             context = context,
                             selectableMode = selectableMode,
                             galleryViewModel = galleryViewModel,
@@ -284,7 +282,6 @@ fun GalleryScreenContent(
 @Composable
 fun MediaItemBox(
     item: MediaItem,
-    state: GalleryState,
     context: Context,
     selectableMode: Boolean,
     galleryViewModel: GalleryViewModel,
@@ -292,11 +289,7 @@ fun MediaItemBox(
     onItemLongClicked: () -> Unit
 ) {
 
-    var checked by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(state) {
-        galleryViewModel.onSelectAllClicked(state.selectAllClicked)
-    }
+    var checked by remember { mutableStateOf(item.selected) }
 
     LaunchedEffect(checked) {
         snapshotFlow { checked }.collect {
