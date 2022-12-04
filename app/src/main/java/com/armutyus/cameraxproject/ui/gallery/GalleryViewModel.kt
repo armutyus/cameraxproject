@@ -95,23 +95,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     }
 
     private fun changeSelectAllState() = viewModelScope.launch {
-        when (_gallery.value!!.selectAllClicked) {
-            false -> {
-                _mediaItems.value?.forEach {
-                    it.value.forEach { mediaItem ->
-                        mediaItem.selected = true
-                    }
-                }
-            }
-            true -> {
-                _mediaItems.value?.forEach {
-                    it.value.forEach { mediaItem ->
-                        mediaItem.selected = false
-                    }
-                }
-            }
-        }
-
         val newValue: Boolean = !_gallery.value!!.selectAllClicked
         _mediaItems.value?.forEach {
             it.value.forEach { mediaItem ->
