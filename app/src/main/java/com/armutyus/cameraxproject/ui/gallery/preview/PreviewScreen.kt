@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +57,7 @@ fun PreviewScreen(
     onShowMessage: (message: String) -> Unit
 ) {
     val context = LocalContext.current
-    val media by galleryViewModel.mediaItems.collectAsState()
+    val media by galleryViewModel.mediaItems.observeAsState()
     val state by previewViewModel.previewScreenState.collectAsState()
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
@@ -182,7 +183,7 @@ fun PreviewScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val currentList = media.values.flatten()
+            val currentList = media?.values?.flatten() ?: emptyList()
             val count = currentList.size
             val initialItem =
                 currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }
