@@ -12,6 +12,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEffect
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
@@ -32,15 +33,15 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         MutableLiveData(mapOf())
     val mediaItems = _mediaItems
 
-    private val _galleryEffect: MutableLiveData<GalleryEffect> = MutableLiveData()
-    val galleryEffect = _galleryEffect
+    init {
+        loadMedia()
+    }
 
-    fun onEvent(galleryEvent: GalleryEvent) {
+    fun onEvent(galleryEvent: GalleryEvent, navController: NavController? = null) {
         when (galleryEvent) {
-            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item)
+            is GalleryEvent.ItemClicked -> navController?.let { onItemClicked(galleryEvent.item, it) }
             is GalleryEvent.ShareTapped -> onShareTapped(galleryEvent.context)
-
-            GalleryEvent.FabClicked -> onFabClicked()
+            GalleryEvent.FabClicked -> navController?.let { onFabClicked(it) }
             GalleryEvent.SelectAllClicked -> changeSelectAllState()
             GalleryEvent.ItemLongClicked -> onItemLongClicked()
             GalleryEvent.CancelSelectableMode -> cancelSelectableMode()
@@ -48,10 +49,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
             GalleryEvent.DeleteTapped -> onDeleteTapped()
             GalleryEvent.DeleteSelectedItems -> deleteSelectedItems()
         }
-    }
-
-    init {
-        loadMedia()
     }
 
     fun loadMedia() = viewModelScope.launch {
@@ -86,9 +83,15 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         _mediaItems.value = _mediaItems.value?.let { it + groupedMedia }
     }
 
-    private fun onFabClicked() = viewModelScope.launch {
+    fun onItemCheckedChange(checked: Boolean, item: MediaItem) = viewModelScope.launch {
+        val itemList = _mediaItems.value?.values?.flatten() ?: emptyList()
+        val findItem = itemList.firstOrNull { it.uri == item.uri }
+        findItem?.selected = checked
+    }
+
+    private fun onFabClicked(navController: NavController) {
         cancelSelectableMode()
-        _galleryEffect.value = GalleryEffect.NavigateTo(PHOTO_ROUTE)
+        navigateTo(GalleryEffect.NavigateTo(PHOTO_ROUTE), navController)
     }
 
     private fun changeSelectAllState() = viewModelScope.launch {
@@ -118,30 +121,26 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         _gallery.value = _gallery.value!!.copy(selectAllClicked = newValue)
     }
 
-    private fun onItemClicked(item: MediaItem?) = viewModelScope.launch {
+    private fun onItemClicked(item: MediaItem?, navController: NavController) {
         cancelSelectableMode()
         val uri = item?.uri
-        _galleryEffect.value =
-            GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}")
+        navigateTo(
+            GalleryEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}"),
+            navController
+        )
     }
 
     private fun onItemLongClicked() = viewModelScope.launch {
         _gallery.value = _gallery.value!!.copy(selectableMode = true)
     }
 
-    private fun cancelSelectableMode() = viewModelScope.launch {
+    private fun cancelSelectableMode() {
         _mediaItems.value?.forEach {
             it.value.forEach { mediaItem ->
                 mediaItem.selected = false
             }
         }
         _gallery.value = _gallery.value!!.copy(selectableMode = false, selectAllClicked = false)
-    }
-
-    fun onItemCheckedChange(checked: Boolean, item: MediaItem) = viewModelScope.launch {
-        val itemList = _mediaItems.value?.values?.flatten() ?: emptyList()
-        val findItem = itemList.firstOrNull { it.uri == item.uri }
-        findItem?.selected = checked
     }
 
     private fun onShareTapped(context: Context) = viewModelScope.launch {
@@ -196,5 +195,17 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         cancelDeleteAction()
         cancelSelectableMode()
         loadMedia()
+    }
+
+    private fun navigateTo(galleryEffect: GalleryEffect, navController: NavController) {
+        if (galleryEffect is GalleryEffect.NavigateTo) {
+            navController.navigate(galleryEffect.route) {
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
     }
 }

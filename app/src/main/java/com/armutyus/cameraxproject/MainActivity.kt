@@ -11,8 +11,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -90,9 +88,7 @@ class MainActivity : ComponentActivity() {
                             GalleryScreen(
                                 navController = navController,
                                 factory = viewModelFactory,
-                            ) {
-                                showMessage(this@MainActivity, it)
-                            }
+                            )
                         }
                         composable(
                             PHOTO_ROUTE,

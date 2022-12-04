@@ -33,7 +33,6 @@ import coil.compose.rememberAsyncImagePainter
 import coil.decode.VideoFrameDecoder
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
-import com.armutyus.cameraxproject.ui.gallery.models.GalleryEffect
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
@@ -43,13 +42,11 @@ import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 fun GalleryScreen(
     navController: NavController,
     factory: ViewModelProvider.Factory,
-    galleryViewModel: GalleryViewModel = viewModel(factory = factory),
-    onShowMessage: (message: String) -> Unit
+    galleryViewModel: GalleryViewModel = viewModel(factory = factory)
 ) {
 
     val state by galleryViewModel.gallery.observeAsState()
     val media by galleryViewModel.mediaItems.observeAsState()
-    val galleryEffect by galleryViewModel.galleryEffect.observeAsState()
     val groupedPhotos =
         media?.values?.flatten()?.filter { it.type == MediaItem.Type.PHOTO }
             ?.groupBy { it.takenTime }
@@ -70,27 +67,6 @@ fun GalleryScreen(
         BottomNavItem.Delete,
         BottomNavItem.Share
     )
-
-    galleryEffect?.let {
-        when (it) {
-            is GalleryEffect.NavigateTo -> {
-                navController.navigate(it.route) {
-                    // Pop up to the start destination of the graph to
-                    // avoid building up a large stack of destinations
-                    // on the back stack as users select items
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    // Avoid multiple copies of the same destination when
-                    // reselecting the same item
-                    launchSingleTop = true
-                    // Restore state when reselecting a previously selected item
-                    restoreState = true
-                }
-            }
-            is GalleryEffect.ShowMessage -> onShowMessage(it.message)
-        }
-    }
 
     LaunchedEffect(galleryViewModel) {
         galleryViewModel.loadMedia()
@@ -132,7 +108,7 @@ fun GalleryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    galleryViewModel.onEvent(GalleryEvent.FabClicked)
+                    galleryViewModel.onEvent(GalleryEvent.FabClicked, navController)
                 }) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -238,9 +214,10 @@ fun GalleryScreen(
                     context = context,
                     groupedMedia = map,
                     selectableMode = state?.selectableMode == true,
-                    galleryViewModel = galleryViewModel,
-                    onEvent = galleryViewModel::onEvent
-                )
+                    galleryViewModel = galleryViewModel
+                ) { galleryEvent ->
+                    galleryViewModel.onEvent(galleryEvent, navController)
+                }
             }
         }
     }
