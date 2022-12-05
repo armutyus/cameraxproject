@@ -32,10 +32,6 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _mediaItems: MutableLiveData<Map<String, List<MediaItem>>> = MutableLiveData(mapOf())
     val mediaItems: LiveData<Map<String, List<MediaItem>>> = _mediaItems
 
-    init {
-        loadMedia()
-    }
-
     fun onEvent(galleryEvent: GalleryEvent, navController: NavController? = null) {
         when (galleryEvent) {
             is GalleryEvent.ItemClicked -> navController?.let { onItemClicked(galleryEvent.item, it) }
@@ -78,8 +74,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         media.addAll(photos + videos)
 
         val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
-
-        _mediaItems.value = _mediaItems.value?.let { it + groupedMedia }
+        _mediaItems.value = groupedMedia
     }
 
     fun onItemCheckedChange(checked: Boolean, item: MediaItem) = viewModelScope.launch {
