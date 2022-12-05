@@ -46,13 +46,13 @@ fun GalleryScreen(
 ) {
 
     val state by galleryViewModel.gallery.observeAsState()
-    val media by galleryViewModel.mediaItems.observeAsState()
+    val media: Map<String, List<MediaItem>> by galleryViewModel.mediaItems.observeAsState(mapOf())
     val groupedPhotos =
-        media?.values?.flatten()?.filter { it.type == MediaItem.Type.PHOTO }
-            ?.groupBy { it.takenTime }
+        media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }
+            .groupBy { it.takenTime }
     val groupedVideos =
-        media?.values?.flatten()?.filter { it.type == MediaItem.Type.VIDEO }
-            ?.groupBy { it.takenTime }
+        media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }
+            .groupBy { it.takenTime }
 
     val context = LocalContext.current
     val activity = LocalContext.current as Activity
@@ -176,7 +176,7 @@ fun GalleryScreen(
         ) {
             if (state?.deleteTapped == true) {
                 val selectedItems =
-                    media?.values?.flatten()?.filter { item -> item.selected } ?: emptyList()
+                    media.values.flatten().filter { item -> item.selected }
                 if (selectedItems.isNotEmpty()) {
                     AlertDialog(onDismissRequest = { /* */ },
                         title = { Text(text = stringResource(id = R.string.delete)) },
@@ -209,7 +209,7 @@ fun GalleryScreen(
                 MediaItem.Filter.ALL -> media
                 MediaItem.Filter.PHOTOS -> groupedPhotos
                 MediaItem.Filter.VIDEOS -> groupedVideos
-            }?.let { map ->
+            }.let { map ->
                 GalleryScreenContent(
                     context = context,
                     groupedMedia = map,
