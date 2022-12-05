@@ -29,9 +29,8 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
     private val _gallery: MutableLiveData<GalleryState> = MutableLiveData(GalleryState())
     val gallery: LiveData<GalleryState> = _gallery
 
-    private val _mediaItems: MutableLiveData<Map<String, List<MediaItem>>> =
-        MutableLiveData(mapOf())
-    val mediaItems = _mediaItems
+    private val _mediaItems: MutableLiveData<Map<String, List<MediaItem>>> = MutableLiveData(mapOf())
+    val mediaItems: LiveData<Map<String, List<MediaItem>>> = _mediaItems
 
     init {
         loadMedia()
@@ -89,7 +88,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         findItem?.selected = checked
     }
 
-    private fun onFabClicked(navController: NavController) {
+    private fun onFabClicked(navController: NavController) = viewModelScope.launch {
         cancelSelectableMode()
         navigateTo(GalleryEffect.NavigateTo(PHOTO_ROUTE), navController)
     }
@@ -104,7 +103,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         _gallery.value = _gallery.value!!.copy(selectAllClicked = newValue)
     }
 
-    private fun onItemClicked(item: MediaItem?, navController: NavController) {
+    private fun onItemClicked(item: MediaItem?, navController: NavController) = viewModelScope.launch {
         cancelSelectableMode()
         val uri = item?.uri
         navigateTo(
@@ -117,7 +116,7 @@ class GalleryViewModel constructor(private val fileManager: FileManager) : ViewM
         _gallery.value = _gallery.value!!.copy(selectableMode = true)
     }
 
-    private fun cancelSelectableMode() {
+    private fun cancelSelectableMode() = viewModelScope.launch {
         _mediaItems.value?.forEach {
             it.value.forEach { mediaItem ->
                 mediaItem.selected = false
