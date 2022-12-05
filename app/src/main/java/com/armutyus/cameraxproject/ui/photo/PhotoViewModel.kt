@@ -129,7 +129,7 @@ class PhotoViewModel constructor(private val fileManager: FileManager) : ViewMod
         val type = "photo"
         viewModelScope.launch {
             _photoEffect.emit(
-                PhotoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+                PhotoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}")
             )
         }
     }

@@ -105,7 +105,7 @@ class VideoViewModel constructor(
         val type = "video"
         viewModelScope.launch {
             _videoEffect.emit(
-                VideoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}/?itemType=${type}")
+                VideoEffect.NavigateTo("preview_screen/?filePath=${uri?.toString()}")
             )
         }
     }

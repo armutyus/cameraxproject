@@ -183,7 +183,7 @@ fun PreviewScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val currentList = media?.values?.flatten() ?: emptyList()
+            val currentList = media?.values?.flatten() ?: return@Surface
             val count = currentList.size
             val initialItem =
                 currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }
