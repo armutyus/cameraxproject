@@ -16,7 +16,6 @@ import androidx.compose.material.icons.sharp.PlayCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -283,7 +282,7 @@ fun MediaItemBox(
     onItemLongClicked: () -> Unit
 ) {
 
-    var checked by rememberSaveable(item.selected) { mutableStateOf(item.selected) }
+    var checked by remember(item.selected) { mutableStateOf(item.selected) }
 
     LaunchedEffect(checked) {
         snapshotFlow { checked }.collect {

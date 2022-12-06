@@ -26,12 +26,13 @@ import kotlinx.coroutines.launch
 class GalleryViewModel constructor(
     private val fileManager: FileManager,
     private val navController: NavController
-    ) : ViewModel() {
+) : ViewModel() {
 
     private val _galleryState: MutableLiveData<GalleryState> = MutableLiveData(GalleryState())
     val galleryState: LiveData<GalleryState> = _galleryState
 
-    private val _mediaItems: MutableLiveData<Map<String, List<MediaItem>>> = MutableLiveData(mapOf())
+    private val _mediaItems: MutableLiveData<Map<String, List<MediaItem>>> =
+        MutableLiveData(mapOf())
     val mediaItems: LiveData<Map<String, List<MediaItem>>> = _mediaItems
 
     fun onEvent(galleryEvent: GalleryEvent) {
@@ -115,7 +116,8 @@ class GalleryViewModel constructor(
                 mediaItem.selected = false
             }
         }
-        _galleryState.value = _galleryState.value!!.copy(selectableMode = false, selectAllClicked = false)
+        _galleryState.value =
+            _galleryState.value!!.copy(selectableMode = false, selectAllClicked = false)
     }
 
     private fun onShareTapped(context: Context) = viewModelScope.launch {

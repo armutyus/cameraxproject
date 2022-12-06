@@ -50,11 +50,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             CameraXProjectTheme {
                 val navController = rememberAnimatedNavController()
+
                 @Suppress("UNCHECKED_CAST")
                 val viewModelFactory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
-                            return PhotoViewModel(fileManager) as T
+                            return PhotoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
                             return PreviewViewModel(navController) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
@@ -104,7 +105,6 @@ class MainActivity : ComponentActivity() {
                             }
                         ) {
                             PhotoScreen(
-                                navController = navController,
                                 factory = viewModelFactory
                             ) {
                                 showMessage(this@MainActivity, it)

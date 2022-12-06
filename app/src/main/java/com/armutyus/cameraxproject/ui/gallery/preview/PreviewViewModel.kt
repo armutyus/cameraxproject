@@ -19,7 +19,8 @@ import java.io.File
 
 class PreviewViewModel constructor(private val navController: NavController) : ViewModel() {
 
-    private val _previewScreenState: MutableLiveData<PreviewScreenState> = MutableLiveData(PreviewScreenState())
+    private val _previewScreenState: MutableLiveData<PreviewScreenState> =
+        MutableLiveData(PreviewScreenState())
     val previewScreenState: LiveData<PreviewScreenState> = _previewScreenState
 
     fun onEvent(previewScreenEvent: PreviewScreenEvent) {
@@ -79,14 +80,20 @@ class PreviewViewModel constructor(private val navController: NavController) : V
 
     private fun onFullScreenToggleTapped(isFullScreen: Boolean) = viewModelScope.launch {
         _previewScreenState.value = _previewScreenState.value!!
-            .copy(isFullScreen = !isFullScreen, showBars = isFullScreen, showMediaController = isFullScreen)
+            .copy(
+                isFullScreen = !isFullScreen,
+                showBars = isFullScreen,
+                showMediaController = isFullScreen
+            )
     }
 
     private fun onPlayerViewTapped() = viewModelScope.launch {
         if (_previewScreenState.value!!.showBars && _previewScreenState.value!!.showMediaController) {
-            _previewScreenState.value = _previewScreenState.value!!.copy(showBars = false, showMediaController = false)
+            _previewScreenState.value =
+                _previewScreenState.value!!.copy(showBars = false, showMediaController = false)
         } else {
-            _previewScreenState.value = _previewScreenState.value!!.copy(showBars = true, showMediaController = true)
+            _previewScreenState.value =
+                _previewScreenState.value!!.copy(showBars = true, showMediaController = true)
         }
     }
 
@@ -100,7 +107,8 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     }
 
     private fun hideController(isPlaying: Boolean) = viewModelScope.launch {
-        _previewScreenState.value = _previewScreenState.value?.copy(showMediaController = !isPlaying, showBars = !isPlaying)
+        _previewScreenState.value =
+            _previewScreenState.value?.copy(showMediaController = !isPlaying, showBars = !isPlaying)
     }
 
     private fun navigateTo(route: String) = viewModelScope.launch {
