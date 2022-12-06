@@ -16,6 +16,7 @@ import androidx.compose.material.icons.sharp.PlayCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
@@ -27,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.VideoFrameDecoder
@@ -40,13 +40,12 @@ import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
-    navController: NavController,
     factory: ViewModelProvider.Factory,
     galleryViewModel: GalleryViewModel = viewModel(factory = factory)
 ) {
 
-    val state by galleryViewModel.gallery.observeAsState()
-    val media: Map<String, List<MediaItem>> by galleryViewModel.mediaItems.observeAsState(mapOf())
+    val state by galleryViewModel.galleryState.observeAsState()
+    val media by galleryViewModel.mediaItems.observeAsState(mapOf())
     val groupedPhotos =
         media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }
             .groupBy { it.takenTime }
@@ -108,7 +107,7 @@ fun GalleryScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    galleryViewModel.onEvent(GalleryEvent.FabClicked, navController)
+                    galleryViewModel.onEvent(GalleryEvent.FabClicked)
                 }) {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -216,7 +215,7 @@ fun GalleryScreen(
                     selectableMode = state?.selectableMode == true,
                     galleryViewModel = galleryViewModel
                 ) { galleryEvent ->
-                    galleryViewModel.onEvent(galleryEvent, navController)
+                    galleryViewModel.onEvent(galleryEvent)
                 }
             }
         }
@@ -284,7 +283,7 @@ fun MediaItemBox(
     onItemLongClicked: () -> Unit
 ) {
 
-    var checked by remember { mutableStateOf(item.selected) }
+    var checked by rememberSaveable(item.selected) { mutableStateOf(item.selected) }
 
     LaunchedEffect(checked) {
         snapshotFlow { checked }.collect {

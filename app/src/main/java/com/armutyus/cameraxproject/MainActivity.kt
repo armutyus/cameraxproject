@@ -42,21 +42,6 @@ class MainActivity : ComponentActivity() {
 
     private val fileManager = FileManager(this)
 
-    @Suppress("UNCHECKED_CAST")
-    private val viewModelFactory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
-                return PhotoViewModel(fileManager) as T
-            if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
-                return PreviewViewModel() as T
-            if (modelClass.isAssignableFrom(VideoViewModel::class.java))
-                return VideoViewModel(fileManager) as T
-            if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
-                return GalleryViewModel(fileManager) as T
-            throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
-        }
-    }
-
     @UnstableApi
     @OptIn(ExperimentalAnimationApi::class)
     @RequiresApi(Build.VERSION_CODES.R)
@@ -64,8 +49,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CameraXProjectTheme {
+                val navController = rememberAnimatedNavController()
+                @Suppress("UNCHECKED_CAST")
+                val viewModelFactory = object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
+                            return PhotoViewModel(fileManager) as T
+                        if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
+                            return PreviewViewModel(navController) as T
+                        if (modelClass.isAssignableFrom(VideoViewModel::class.java))
+                            return VideoViewModel(fileManager) as T
+                        if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
+                            return GalleryViewModel(fileManager, navController) as T
+                        throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
+                    }
+                }
                 Permissions(permissionGrantedContent = {
-                    val navController = rememberAnimatedNavController()
                     AnimatedNavHost(
                         navController = navController,
                         startDestination = GALLERY_ROUTE
@@ -86,7 +85,6 @@ class MainActivity : ComponentActivity() {
                             }
                         ) {
                             GalleryScreen(
-                                navController = navController,
                                 factory = viewModelFactory,
                             )
                         }
@@ -158,11 +156,8 @@ class MainActivity : ComponentActivity() {
                             val filePath = remember { it.arguments?.getString("filePath") }
                             PreviewScreen(
                                 filePath = filePath ?: "",
-                                navController = navController,
                                 factory = viewModelFactory
-                            ) {
-                                showMessage(this@MainActivity, it)
-                            }
+                            )
                         }
                         composable(SETTINGS_ROUTE) {
                             //SettingsScreen(navController = navController)
