@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
                             return PreviewViewModel(navController) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
-                            return VideoViewModel(fileManager) as T
+                            return VideoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
                             return GalleryViewModel(fileManager, navController) as T
                         throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
@@ -126,7 +126,6 @@ class MainActivity : ComponentActivity() {
                             }
                         ) {
                             VideoScreen(
-                                navController = navController,
                                 factory = viewModelFactory
                             ) {
                                 showMessage(this@MainActivity, it)

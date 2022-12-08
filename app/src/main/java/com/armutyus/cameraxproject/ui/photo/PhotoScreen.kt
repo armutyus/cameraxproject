@@ -79,7 +79,7 @@ fun PhotoScreen(
         }
     }
 
-    DisposableEffect(key1 = "key1") {
+    DisposableEffect(key1 = "orientation") {
         orientationEventListener.enable()
         onDispose {
             orientationEventListener.disable()
