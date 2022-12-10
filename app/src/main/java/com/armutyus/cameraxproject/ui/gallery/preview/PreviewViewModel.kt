@@ -88,13 +88,8 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     }
 
     private fun onPlayerViewTapped() = viewModelScope.launch {
-        if (_previewScreenState.value!!.showBars && _previewScreenState.value!!.showMediaController) {
-            _previewScreenState.value =
-                _previewScreenState.value!!.copy(showBars = false, showMediaController = false)
-        } else {
-            _previewScreenState.value =
-                _previewScreenState.value!!.copy(showBars = true, showMediaController = true)
-        }
+        val newValue = !(_previewScreenState.value!!.showBars && _previewScreenState.value!!.showMediaController)
+        _previewScreenState.value = _previewScreenState.value!!.copy(showBars = newValue, showMediaController = newValue)
     }
 
     private fun onChangeBarState(zoomState: Boolean) = viewModelScope.launch {
