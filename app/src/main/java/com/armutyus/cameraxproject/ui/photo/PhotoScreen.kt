@@ -2,11 +2,10 @@ package com.armutyus.cameraxproject.ui.photo
 
 import android.content.pm.ActivityInfo
 import android.net.Uri
-import android.os.Build
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.View
-import androidx.annotation.RequiresApi
+import android.widget.Toast
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.border
@@ -34,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.*
 import com.armutyus.cameraxproject.util.*
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
@@ -47,7 +47,6 @@ import com.armutyus.cameraxproject.util.Util.Companion.TIMER_OFF
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_MODE
 import java.io.File
 
-@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun PhotoScreen(
     factory: ViewModelProvider.Factory,
@@ -131,12 +130,13 @@ fun PhotoScreen(
             imageUri = latestCapturedPhoto,
             view = view,
             rotation = rotation,
+            onEditIconTapped = { Toast.makeText(context, R.string.feature_not_available, Toast.LENGTH_SHORT).show() },
             onEvent = photoViewModel::onEvent
         )
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.R)
+
 @Composable
 private fun PhotoScreenContent(
     cameraLens: Int?,
@@ -149,6 +149,7 @@ private fun PhotoScreenContent(
     imageUri: Uri?,
     view: View,
     rotation: Int,
+    onEditIconTapped: () -> Unit,
     onEvent: (PhotoEvent) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -168,10 +169,10 @@ private fun PhotoScreenContent(
                     delayTimer = delayTimer,
                     flashMode = flashMode,
                     rotation = rotation,
+                    onEditIconTapped = { onEditIconTapped() },
                     onDelayTimerTapped = { onEvent(PhotoEvent.DelayTimerTapped) },
-                    onFlashTapped = { onEvent(PhotoEvent.FlashTapped) },
-                    onSettingsTapped = { onEvent(PhotoEvent.SettingsTapped) }
-                )
+                    onFlashTapped = { onEvent(PhotoEvent.FlashTapped) }
+                ) { onEvent(PhotoEvent.SettingsTapped) }
                 /*if (captureWithDelay == DELAY_3S) {
                     DelayTimer(millisInFuture = captureWithDelay.toLong())
                 } else if (captureWithDelay == DELAY_10S) {
@@ -218,6 +219,7 @@ internal fun TopControls(
     delayTimer: Int,
     flashMode: Int,
     rotation: Int,
+    onEditIconTapped: () -> Unit,
     onDelayTimerTapped: () -> Unit,
     onFlashTapped: () -> Unit,
     onSettingsTapped: () -> Unit
@@ -247,7 +249,7 @@ internal fun TopControls(
                 flashMode = flashMode,
                 onTapped = onFlashTapped
             )
-            CameraEditIcon(rotation = rotation) {}
+            CameraEditIcon(rotation = rotation) { onEditIconTapped() }
             SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
         }
     }
@@ -359,7 +361,6 @@ fun CameraModesRow(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 private fun CameraPreview(
     cameraState: CameraState,

@@ -1,6 +1,9 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -21,6 +24,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toFile
 import androidx.lifecycle.ViewModelProvider
@@ -76,6 +80,14 @@ fun PreviewScreen(
         BottomNavItem.EditItem,
         BottomNavItem.Delete
     )
+
+    @Suppress("DEPRECATION")
+    val originalImageBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(filePath))
+        ImageDecoder.decodeBitmap(source)
+    } else {
+        MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(filePath))
+    }
 
     Scaffold(
         topBar = {

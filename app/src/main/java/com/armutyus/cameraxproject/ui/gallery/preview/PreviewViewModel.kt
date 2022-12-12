@@ -3,6 +3,7 @@ package com.armutyus.cameraxproject.ui.gallery.preview
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
@@ -11,6 +12,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.ImageFilters
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilter
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
@@ -22,6 +25,9 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     private val _previewScreenState: MutableLiveData<PreviewScreenState> =
         MutableLiveData(PreviewScreenState())
     val previewScreenState: LiveData<PreviewScreenState> = _previewScreenState
+
+    private val _imageFilterList: MutableLiveData<List<ImageFilter>> = MutableLiveData(emptyList())
+    val imageFilterList: LiveData<List<ImageFilter>> = _imageFilterList
 
     fun onEvent(previewScreenEvent: PreviewScreenEvent) {
         when (previewScreenEvent) {
@@ -42,7 +48,10 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     }
 
     private fun onEditTapped() = viewModelScope.launch {
-        TODO("Not yet implemented")
+        _previewScreenState.value = _previewScreenState.value!!.copy(
+            isInEditMode = true,
+            showBars = false
+        )
     }
 
     private fun onDeleteTapped(file: File) = viewModelScope.launch {
@@ -105,6 +114,24 @@ class PreviewViewModel constructor(private val navController: NavController) : V
         _previewScreenState.value =
             _previewScreenState.value?.copy(showMediaController = !isPlaying, showBars = !isPlaying)
     }
+
+    //EditMedia Works
+
+    fun loadImageFilters(context: Context, originalImage: Bitmap) = viewModelScope.launch {
+        val image = getPreviewImage(originalImage = originalImage)
+        val imageFilterList = ImageFilters.ImageFiltersCompat.getImageFiltersList(context, image)
+        _imageFilterList.value = imageFilterList
+    }
+
+    private fun getPreviewImage(originalImage: Bitmap): Bitmap {
+        return kotlin.runCatching {
+            val previewWidth = 150
+            val previewHeight = originalImage.height * previewWidth / originalImage.width
+            Bitmap.createScaledBitmap(originalImage, previewWidth, previewHeight, false)
+        }.getOrDefault(originalImage)
+    }
+
+    //EditMedia End
 
     private fun navigateTo(route: String) = viewModelScope.launch {
         navController.navigate(route) {

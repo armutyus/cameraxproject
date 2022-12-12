@@ -1,9 +1,7 @@
 package com.armutyus.cameraxproject.util
 
 import android.app.Activity
-import android.os.Build
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,14 +15,12 @@ import androidx.compose.ui.unit.dp
 import com.armutyus.cameraxproject.R
 import com.google.accompanist.permissions.*
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @ExperimentalPermissionsApi
 @Composable
 fun Permissions(
     permissions: List<String> = listOf(
         android.Manifest.permission.CAMERA,
         android.Manifest.permission.READ_EXTERNAL_STORAGE,
-        android.Manifest.permission.ACCESS_MEDIA_LOCATION,
         android.Manifest.permission.RECORD_AUDIO
     ),
     permissionGrantedContent: @Composable () -> Unit = { }

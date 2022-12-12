@@ -1,12 +1,10 @@
 package com.armutyus.cameraxproject
 
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -44,7 +42,6 @@ class MainActivity : ComponentActivity() {
 
     @UnstableApi
     @OptIn(ExperimentalAnimationApi::class)
-    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
