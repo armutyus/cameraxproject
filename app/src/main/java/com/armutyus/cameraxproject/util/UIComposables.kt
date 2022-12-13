@@ -290,7 +290,7 @@ fun CameraPauseIconSmall(modifier: Modifier = Modifier, onTapped: () -> Unit) {
 
 
 @Composable
-fun CameraPlayIconSmall(modifier: Modifier = Modifier, rotation: Int, onTapped: () -> Unit) {
+fun CameraPlayIconSmall(rotation: Int, onTapped: () -> Unit) {
     IconButton(
         modifier = Modifier
             .rotate(

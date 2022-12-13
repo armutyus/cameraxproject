@@ -14,7 +14,6 @@ class ImageFilters {
             val gpuImage = GPUImage(context).apply {
                 setImage(image)
             }
-
             return imageFilterList(gpuImage)
         }
 

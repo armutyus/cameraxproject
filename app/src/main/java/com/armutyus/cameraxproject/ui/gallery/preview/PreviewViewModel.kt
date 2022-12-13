@@ -4,6 +4,10 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
@@ -25,9 +29,6 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     private val _previewScreenState: MutableLiveData<PreviewScreenState> =
         MutableLiveData(PreviewScreenState())
     val previewScreenState: LiveData<PreviewScreenState> = _previewScreenState
-
-    private val _imageFilterList: MutableLiveData<List<ImageFilter>> = MutableLiveData(emptyList())
-    val imageFilterList: LiveData<List<ImageFilter>> = _imageFilterList
 
     fun onEvent(previewScreenEvent: PreviewScreenEvent) {
         when (previewScreenEvent) {
@@ -117,8 +118,27 @@ class PreviewViewModel constructor(private val navController: NavController) : V
 
     //EditMedia Works
 
-    fun loadImageFilters(context: Context, originalImage: Bitmap) = viewModelScope.launch {
-        val image = getPreviewImage(originalImage = originalImage)
+    private val _imageFilterList: MutableLiveData<List<ImageFilter>> = MutableLiveData(emptyList())
+    val imageFilterList: LiveData<List<ImageFilter>> = _imageFilterList
+
+    private val _currentImageBitmap: MutableLiveData<Bitmap> = MutableLiveData()
+    val currentImageBitmap: LiveData<Bitmap> = _currentImageBitmap
+
+    private val _filteredBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
+    val filteredBitmap: LiveData<Bitmap?> = _filteredBitmap
+
+    private val _imageHasFilter: MutableLiveData<Boolean> = MutableLiveData(false)
+    val imageHasFilter: LiveData<Boolean> = _imageHasFilter
+
+    fun loadImageFilters(context: Context, originalImageUri: Uri) = viewModelScope.launch {
+        @Suppress("DEPRECATION")
+        _currentImageBitmap.value = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val source = ImageDecoder.createSource(context.contentResolver, originalImageUri)
+            ImageDecoder.decodeBitmap(source)
+        } else {
+            MediaStore.Images.Media.getBitmap(context.contentResolver, originalImageUri)
+        }
+        val image = getPreviewImage(originalImage = _currentImageBitmap.value!!)
         val imageFilterList = ImageFilters.ImageFiltersCompat.getImageFiltersList(context, image)
         _imageFilterList.value = imageFilterList
     }
@@ -129,6 +149,14 @@ class PreviewViewModel constructor(private val navController: NavController) : V
             val previewHeight = originalImage.height * previewWidth / originalImage.width
             Bitmap.createScaledBitmap(originalImage, previewWidth, previewHeight, false)
         }.getOrDefault(originalImage)
+    }
+
+    fun selectedFilter(filterName: String){
+        _imageHasFilter.value = filterName != "Normal"
+    }
+
+    fun setFilteredBitmap(imageBitmap: Bitmap) {
+        _filteredBitmap.value = imageBitmap
     }
 
     //EditMedia End

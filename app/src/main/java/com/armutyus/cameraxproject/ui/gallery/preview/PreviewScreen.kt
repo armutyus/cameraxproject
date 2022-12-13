@@ -24,7 +24,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toFile
 import androidx.lifecycle.ViewModelProvider
@@ -38,6 +37,7 @@ import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditMediaContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_FORWARD_5
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_REPLAY_5
@@ -45,6 +45,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import jp.co.cyberagent.android.gpuimage.GPUImage
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
@@ -80,14 +81,6 @@ fun PreviewScreen(
         BottomNavItem.EditItem,
         BottomNavItem.Delete
     )
-
-    @Suppress("DEPRECATION")
-    val originalImageBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        val source = ImageDecoder.createSource(context.contentResolver, Uri.parse(filePath))
-        ImageDecoder.decodeBitmap(source)
-    } else {
-        MediaStore.Images.Media.getBitmap(context.contentResolver, Uri.parse(filePath))
-    }
 
     Scaffold(
         topBar = {
@@ -209,7 +202,7 @@ fun PreviewScreen(
                                     }
                                 },
                                 onTap = {
-                                    if (!zoomState) previewViewModel.onEvent(
+                                    if (!zoomState && state?.isInEditMode == false) previewViewModel.onEvent(
                                         PreviewScreenEvent.ChangeBarState(zoomState)
                                     )
                                 }
@@ -245,25 +238,45 @@ fun PreviewScreen(
                 ) {
                     when (currentList[page].type) {
                         MediaItem.Type.PHOTO -> {
-                            SubcomposeAsyncImage(
-                                model = currentList[page].uri,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .graphicsLayer(
-                                        scaleX = maxOf(1f, minOf(3f, scale)),
-                                        scaleY = maxOf(1f, minOf(3f, scale)),
-                                        rotationZ = rotationState,
-                                        translationX = offsetX,
-                                        translationY = offsetY
-                                    ),
-                                filterQuality = FilterQuality.High,
-                                contentDescription = ""
-                            ) {
-                                val painterState = painter.state
-                                if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
-                                    LinearProgressIndicator()
-                                } else {
-                                    SubcomposeAsyncImageContent()
+                            if (state?.isInEditMode == true) {
+                                zoomState = true
+                                val gpuImage = GPUImage(context)
+
+                                previewViewModel.loadImageFilters(context, currentList[page].uri!!)
+
+                                val imageFilters by previewViewModel.imageFilterList.observeAsState()
+                                val originalImageBitmap by previewViewModel.currentImageBitmap.observeAsState()
+
+                                originalImageBitmap?.let { bitmap ->
+                                    EditMediaContent(
+                                        originalImageBitmap = bitmap,
+                                        imageFilters = imageFilters ?: emptyList(),
+                                        gpuImage = gpuImage,
+                                        setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
+                                        selectedFilter = { previewViewModel.selectedFilter(it) }
+                                    )
+                                }
+                            } else {
+                                SubcomposeAsyncImage(
+                                    model = currentList[page].uri,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .graphicsLayer(
+                                            scaleX = maxOf(1f, minOf(3f, scale)),
+                                            scaleY = maxOf(1f, minOf(3f, scale)),
+                                            rotationZ = rotationState,
+                                            translationX = offsetX,
+                                            translationY = offsetY
+                                        ),
+                                    filterQuality = FilterQuality.High,
+                                    contentDescription = ""
+                                ) {
+                                    val painterState = painter.state
+                                    if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
+                                        LinearProgressIndicator()
+                                    } else {
+                                        SubcomposeAsyncImageContent()
+                                    }
                                 }
                             }
                         }
