@@ -19,6 +19,7 @@ import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.preview.PreviewScreen
 import com.armutyus.cameraxproject.ui.gallery.preview.PreviewViewModel
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.repo.EditMediaRepositoryImpl
 import com.armutyus.cameraxproject.ui.photo.PhotoScreen
 import com.armutyus.cameraxproject.ui.photo.PhotoViewModel
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
@@ -39,6 +40,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 class MainActivity : ComponentActivity() {
 
     private val fileManager = FileManager(this)
+    private val editMediaRepository = EditMediaRepositoryImpl(this)
 
     @UnstableApi
     @OptIn(ExperimentalAnimationApi::class)
@@ -54,7 +56,7 @@ class MainActivity : ComponentActivity() {
                         if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                             return PhotoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
-                            return PreviewViewModel(navController) as T
+                            return PreviewViewModel(navController, editMediaRepository) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                             return VideoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
@@ -62,104 +64,106 @@ class MainActivity : ComponentActivity() {
                         throw IllegalArgumentException(getString(R.string.unknown_viewmodel))
                     }
                 }
-                Permissions(permissionGrantedContent = {
-                    AnimatedNavHost(
-                        navController = navController,
-                        startDestination = GALLERY_ROUTE
-                    ) {
-                        composable(
-                            GALLERY_ROUTE,
-                            enterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            exitTransition = {
-                                fadeOut(tween(700))
-                            },
-                            popEnterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            popExitTransition = {
-                                fadeOut(tween(700))
-                            }
+
+                Permissions(
+                    permissionGrantedContent = {
+                        AnimatedNavHost(
+                            navController = navController,
+                            startDestination = GALLERY_ROUTE
                         ) {
-                            GalleryScreen(
-                                factory = viewModelFactory,
-                            )
-                        }
-                        composable(
-                            PHOTO_ROUTE,
-                            enterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            exitTransition = {
-                                fadeOut(tween(700))
-                            },
-                            popEnterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            popExitTransition = {
-                                fadeOut(tween(700))
-                            }
-                        ) {
-                            PhotoScreen(
-                                factory = viewModelFactory
-                            ) {
-                                showMessage(this@MainActivity, it)
-                            }
-                        }
-                        composable(
-                            VIDEO_ROUTE,
-                            enterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            exitTransition = {
-                                fadeOut(tween(700))
-                            },
-                            popEnterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            popExitTransition = {
-                                fadeOut(tween(700))
-                            }
-                        ) {
-                            VideoScreen(
-                                factory = viewModelFactory
-                            ) {
-                                showMessage(this@MainActivity, it)
-                            }
-                        }
-                        composable(
-                            route = "preview_screen/?filePath={filePath}",
-                            arguments = listOf(
-                                navArgument("filePath") {
-                                    type = NavType.StringType
-                                    defaultValue = ""
+                            composable(
+                                GALLERY_ROUTE,
+                                enterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                exitTransition = {
+                                    fadeOut(tween(700))
+                                },
+                                popEnterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                popExitTransition = {
+                                    fadeOut(tween(700))
                                 }
-                            ),
-                            enterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            exitTransition = {
-                                fadeOut(tween(700))
-                            },
-                            popEnterTransition = {
-                                fadeIn(tween(700))
-                            },
-                            popExitTransition = {
-                                fadeOut(tween(700))
+                            ) {
+                                GalleryScreen(
+                                    factory = viewModelFactory,
+                                )
                             }
-                        ) {
-                            val filePath = remember { it.arguments?.getString("filePath") }
-                            PreviewScreen(
-                                filePath = filePath ?: "",
-                                factory = viewModelFactory
-                            )
+                            composable(
+                                PHOTO_ROUTE,
+                                enterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                exitTransition = {
+                                    fadeOut(tween(700))
+                                },
+                                popEnterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                popExitTransition = {
+                                    fadeOut(tween(700))
+                                }
+                            ) {
+                                PhotoScreen(
+                                    factory = viewModelFactory
+                                ) {
+                                    showMessage(this@MainActivity, it)
+                                }
+                            }
+                            composable(
+                                VIDEO_ROUTE,
+                                enterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                exitTransition = {
+                                    fadeOut(tween(700))
+                                },
+                                popEnterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                popExitTransition = {
+                                    fadeOut(tween(700))
+                                }
+                            ) {
+                                VideoScreen(
+                                    factory = viewModelFactory
+                                ) {
+                                    showMessage(this@MainActivity, it)
+                                }
+                            }
+                            composable(
+                                route = "preview_screen/?filePath={filePath}",
+                                arguments = listOf(
+                                    navArgument("filePath") {
+                                        type = NavType.StringType
+                                        defaultValue = ""
+                                    }
+                                ),
+                                enterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                exitTransition = {
+                                    fadeOut(tween(700))
+                                },
+                                popEnterTransition = {
+                                    fadeIn(tween(700))
+                                },
+                                popExitTransition = {
+                                    fadeOut(tween(700))
+                                }
+                            ) {
+                                val filePath = remember { it.arguments?.getString("filePath") }
+                                PreviewScreen(
+                                    filePath = filePath ?: "",
+                                    factory = viewModelFactory
+                                )
+                            }
+                            composable(SETTINGS_ROUTE) {
+                                //SettingsScreen(navController = navController)
+                            }
                         }
-                        composable(SETTINGS_ROUTE) {
-                            //SettingsScreen(navController = navController)
-                        }
-                    }
-                })
+                    })
             }
         }
     }

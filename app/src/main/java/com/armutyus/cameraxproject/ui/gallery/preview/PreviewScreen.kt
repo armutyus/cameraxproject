@@ -1,9 +1,7 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
-import android.graphics.ImageDecoder
+import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,7 +27,6 @@ import androidx.core.net.toFile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -39,13 +36,15 @@ import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditMediaContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
-import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_FORWARD_5
-import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_REPLAY_5
+import com.armutyus.cameraxproject.ui.gallery.preview.videoplayback.VideoPlaybackContent
+import com.armutyus.cameraxproject.util.toBitmap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import jp.co.cyberagent.android.gpuimage.GPUImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
@@ -242,14 +241,23 @@ fun PreviewScreen(
                                 zoomState = true
                                 val gpuImage = GPUImage(context)
 
-                                previewViewModel.loadImageFilters(context, currentList[page].uri!!)
+                                var originalImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+                                LaunchedEffect(currentList[page]) {
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        originalImageBitmap =
+                                            currentList[page].uri!!.toBitmap(context)
+                                        previewViewModel.loadImageFilters(originalImageBitmap)
+                                    }
+                                }
 
                                 val imageFilters by previewViewModel.imageFilterList.observeAsState()
-                                val originalImageBitmap by previewViewModel.currentImageBitmap.observeAsState()
+                                val filteredImageBitmap by previewViewModel.filteredBitmap.observeAsState()
 
                                 originalImageBitmap?.let { bitmap ->
                                     EditMediaContent(
                                         originalImageBitmap = bitmap,
+                                        filteredImageBitmap = filteredImageBitmap ?: bitmap,
                                         imageFilters = imageFilters ?: emptyList(),
                                         gpuImage = gpuImage,
                                         setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
@@ -303,39 +311,4 @@ fun PreviewScreen(
             }
         }
     }
-}
-
-@UnstableApi
-@Composable
-private fun VideoPlaybackContent(
-    filePath: Uri?,
-    isFullScreen: Boolean,
-    shouldShowController: Boolean,
-    onFullScreenToggle: (isFullScreen: Boolean) -> Unit,
-    hideController: (isPlaying: Boolean) -> Unit,
-    onPlayerClick: () -> Unit,
-    navigateBack: () -> Unit,
-) {
-    val systemUiController = rememberSystemUiController()
-    LaunchedEffect(isFullScreen) {
-        systemUiController.isSystemBarsVisible = !isFullScreen
-    }
-    val context = LocalContext.current
-    val exoPlayer = remember(filePath) {
-        ExoPlayer.Builder(context)
-            .setSeekBackIncrementMs(VIDEO_REPLAY_5)
-            .setSeekForwardIncrementMs(VIDEO_FORWARD_5)
-            .build()
-    }
-
-    CustomPlayerView(
-        filePath = filePath,
-        videoPlayer = exoPlayer,
-        isFullScreen = isFullScreen,
-        shouldShowController = shouldShowController,
-        onFullScreenToggle = onFullScreenToggle,
-        hideController = hideController,
-        onPlayerClick = onPlayerClick,
-        navigateBack = navigateBack,
-    )
 }

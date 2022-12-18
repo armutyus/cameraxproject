@@ -4,10 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
@@ -16,15 +13,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
-import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.ImageFilters
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilter
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.repo.EditMediaRepository
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import kotlinx.coroutines.launch
 import java.io.File
 
-class PreviewViewModel constructor(private val navController: NavController) : ViewModel() {
+class PreviewViewModel constructor(
+    private val navController: NavController,
+    private val editMediaRepository: EditMediaRepository
+) : ViewModel() {
 
     private val _previewScreenState: MutableLiveData<PreviewScreenState> =
         MutableLiveData(PreviewScreenState())
@@ -98,8 +99,10 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     }
 
     private fun onPlayerViewTapped() = viewModelScope.launch {
-        val newValue = !(_previewScreenState.value!!.showBars && _previewScreenState.value!!.showMediaController)
-        _previewScreenState.value = _previewScreenState.value!!.copy(showBars = newValue, showMediaController = newValue)
+        val newValue =
+            !(_previewScreenState.value!!.showBars && _previewScreenState.value!!.showMediaController)
+        _previewScreenState.value =
+            _previewScreenState.value!!.copy(showBars = newValue, showMediaController = newValue)
     }
 
     private fun onChangeBarState(zoomState: Boolean) = viewModelScope.launch {
@@ -121,41 +124,40 @@ class PreviewViewModel constructor(private val navController: NavController) : V
     private val _imageFilterList: MutableLiveData<List<ImageFilter>> = MutableLiveData(emptyList())
     val imageFilterList: LiveData<List<ImageFilter>> = _imageFilterList
 
-    private val _currentImageBitmap: MutableLiveData<Bitmap> = MutableLiveData()
-    val currentImageBitmap: LiveData<Bitmap> = _currentImageBitmap
-
     private val _filteredBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
     val filteredBitmap: LiveData<Bitmap?> = _filteredBitmap
 
     private val _imageHasFilter: MutableLiveData<Boolean> = MutableLiveData(false)
     val imageHasFilter: LiveData<Boolean> = _imageHasFilter
 
-    fun loadImageFilters(context: Context, originalImageUri: Uri) = viewModelScope.launch {
-        @Suppress("DEPRECATION")
-        _currentImageBitmap.value = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val source = ImageDecoder.createSource(context.contentResolver, originalImageUri)
-            ImageDecoder.decodeBitmap(source)
-        } else {
-            MediaStore.Images.Media.getBitmap(context.contentResolver, originalImageUri)
+    fun loadImageFilters(bitmap: Bitmap?) = viewModelScope.launch {
+        kotlin.runCatching {
+            val image = getPreviewImage(originalImage = bitmap!!)
+            editMediaRepository.getImageFiltersList(image)
+        }.onSuccess {
+            setImageFilterList(it)
+        }.onFailure {
+            Log.e(TAG, it.localizedMessage ?: "Bitmap with filter")
         }
-        val image = getPreviewImage(originalImage = _currentImageBitmap.value!!)
-        val imageFilterList = ImageFilters.ImageFiltersCompat.getImageFiltersList(context, image)
-        _imageFilterList.value = imageFilterList
     }
 
     private fun getPreviewImage(originalImage: Bitmap): Bitmap {
         return kotlin.runCatching {
-            val previewWidth = 150
+            val previewWidth = 90
             val previewHeight = originalImage.height * previewWidth / originalImage.width
             Bitmap.createScaledBitmap(originalImage, previewWidth, previewHeight, false)
         }.getOrDefault(originalImage)
     }
 
-    fun selectedFilter(filterName: String){
+    private fun setImageFilterList(imageFilterList: List<ImageFilter>) = viewModelScope.launch {
+        _imageFilterList.value = imageFilterList
+    }
+
+    fun selectedFilter(filterName: String) = viewModelScope.launch {
         _imageHasFilter.value = filterName != "Normal"
     }
 
-    fun setFilteredBitmap(imageBitmap: Bitmap) {
+    fun setFilteredBitmap(imageBitmap: Bitmap) = viewModelScope.launch {
         _filteredBitmap.value = imageBitmap
     }
 

@@ -34,7 +34,10 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.armutyus.cameraxproject.R
-import com.armutyus.cameraxproject.ui.photo.models.*
+import com.armutyus.cameraxproject.ui.photo.models.CameraModesItem
+import com.armutyus.cameraxproject.ui.photo.models.CameraState
+import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
+import com.armutyus.cameraxproject.ui.photo.models.PreviewPhotoState
 import com.armutyus.cameraxproject.util.*
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
@@ -130,7 +133,13 @@ fun PhotoScreen(
             imageUri = latestCapturedPhoto,
             view = view,
             rotation = rotation,
-            onEditIconTapped = { Toast.makeText(context, R.string.feature_not_available, Toast.LENGTH_SHORT).show() },
+            onEditIconTapped = {
+                Toast.makeText(
+                    context,
+                    R.string.feature_not_available,
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
             onEvent = photoViewModel::onEvent
         )
     }

@@ -1,7 +1,9 @@
 package com.armutyus.cameraxproject.ui.gallery.preview.editmedia
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.*
+import android.graphics.drawable.BitmapDrawable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -15,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -24,26 +26,38 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
-import coil.compose.rememberAsyncImagePainter
+import coil.imageLoader
 import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilter
 import jp.co.cyberagent.android.gpuimage.GPUImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun EditMediaContent(
     originalImageBitmap: Bitmap,
+    filteredImageBitmap: Bitmap,
     imageFilters: List<ImageFilter>,
     gpuImage: GPUImage,
     setFilteredBitmap: (Bitmap) -> Unit,
     selectedFilter: (String) -> Unit
 ) {
+
     gpuImage.setImage(originalImageBitmap)
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            EditMediaMidContent(imageBitmap = filteredImageBitmap)
+        }
+        Column(
             modifier = Modifier
-                .wrapContentSize(Alignment.BottomCenter)
-                .border(BorderStroke(0.3.dp, MaterialTheme.colorScheme.onBackground)),
+                .wrapContentSize(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom
         ) {
@@ -62,6 +76,38 @@ private fun EditMediaTopContent(
 
 ) {
 
+}
+
+@Composable
+private fun EditMediaMidContent(
+    imageBitmap: Bitmap
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(6.dp)
+            .clip(RectangleShape)
+    ) {
+        SubcomposeAsyncImage(
+            model = imageBitmap,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxSize(),
+            alignment = Alignment.Center,
+            contentScale = ContentScale.Fit,
+            filterQuality = FilterQuality.High,
+            contentDescription = ""
+        ) {
+            val painterState = painter.state
+            if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
+                CircularProgressIndicator(Modifier.size(8.dp))
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+            println("PainterState: $painterState")
+        }
+    }
 }
 
 @Composable
@@ -99,6 +145,7 @@ private fun ImageWithFilter(
     Box(
         modifier = Modifier
             .width(90.dp)
+            .height(160.dp)
             .background(MaterialTheme.colorScheme.background)
             .padding(6.dp)
             .clip(MaterialTheme.shapes.medium)
@@ -107,22 +154,37 @@ private fun ImageWithFilter(
             }
     ) {
 
+        val context = LocalContext.current
+        var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+        LaunchedEffect(Unit) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val loader = context.imageLoader
+                val request = ImageRequest.Builder(context)
+                    .data(image)
+                    .build()
+                val result = (loader.execute(request) as SuccessResult).drawable
+                bitmap = (result as BitmapDrawable).bitmap
+            }
+        }
+
         SubcomposeAsyncImage(
-            model = image,
+            model = bitmap,
             modifier = Modifier
                 .align(Alignment.Center)
-                .height(120.dp)
-                .fillMaxWidth(),
+                .height(160.dp)
+                .width(90.dp),
             alignment = Alignment.Center,
             contentScale = ContentScale.FillBounds,
             contentDescription = ""
         ) {
             val painterState = painter.state
             if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(Modifier.size(8.dp))
             } else {
                 SubcomposeAsyncImageContent()
             }
+            println("PainterState: $painterState")
         }
         Text(
             text = filterName,
