@@ -12,14 +12,14 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
         val gpuImage = GPUImage(context).apply {
             setImage(image)
         }
-        val imgFilters: ArrayList<ImageFilter> = ArrayList()
+        val imageFilters: ArrayList<ImageFilter> = ArrayList()
 
         //region:: ImageFilters
 
         // Normal
         GPUImageFilter().also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Normal",
                     filter = filter,
@@ -39,7 +39,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Retro",
                     filter = filter,
@@ -59,7 +59,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Just",
                     filter = filter,
@@ -79,7 +79,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Hume",
                     filter = filter,
@@ -99,7 +99,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Desert",
                     filter = filter,
@@ -119,7 +119,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Old Times",
                     filter = filter,
@@ -139,7 +139,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Limo",
                     filter = filter,
@@ -151,7 +151,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
         // Sepia
         GPUImageSepiaToneFilter().also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Sepia",
                     filter = filter,
@@ -171,7 +171,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Solar",
                     filter = filter,
@@ -183,7 +183,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
         // Wole
         GPUImageSaturationFilter(2.0f).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Wole",
                     filter = filter,
@@ -203,7 +203,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Neutron",
                     filter = filter,
@@ -215,7 +215,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
         // Bright
         GPUImageRGBFilter(1.1f, 1.3f, 1.6f).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Bright",
                     filter = filter,
@@ -235,7 +235,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Milk",
                     filter = filter,
@@ -255,7 +255,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "BW",
                     filter = filter,
@@ -275,7 +275,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Clue",
                     filter = filter,
@@ -295,7 +295,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Muli",
                     filter = filter,
@@ -315,7 +315,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Aero",
                     filter = filter,
@@ -335,7 +335,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Classic",
                     filter = filter,
@@ -355,7 +355,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Atom",
                     filter = filter,
@@ -375,7 +375,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Mars",
                     filter = filter,
@@ -395,7 +395,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
             )
         ).also { filter ->
             gpuImage.setFilter(filter)
-            imgFilters.add(
+            imageFilters.add(
                 ImageFilter(
                     name = "Yeli",
                     filter = filter,
@@ -406,7 +406,7 @@ class EditMediaRepositoryImpl(private val context: Context) : EditMediaRepositor
 
         //endregion
 
-        return imgFilters
+        return imageFilters
     }
 
 }

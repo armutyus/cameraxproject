@@ -1,10 +1,12 @@
 package com.armutyus.cameraxproject.util
 
 import android.content.Context
+import android.graphics.Bitmap
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,6 +29,21 @@ class FileManager(private val context: Context) {
                 getPrivateFileDirectory(directory),
                 "$timestamp.$ext"
             ).canonicalPath
+        }
+    }
+
+    suspend fun saveFilteredImageToFile(bitmap: Bitmap, directory: String, ext: String) {
+        withContext(Dispatchers.IO) {
+            val timestamp = SimpleDateFormat(
+                FILENAME,
+                Locale.getDefault()
+            ).format(System.currentTimeMillis())
+            val file = File(getPrivateFileDirectory(directory), "cXc_$timestamp.$ext")
+            val fileOutputStream = FileOutputStream(file)
+            fileOutputStream.use {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                it.close()
+            }
         }
     }
 

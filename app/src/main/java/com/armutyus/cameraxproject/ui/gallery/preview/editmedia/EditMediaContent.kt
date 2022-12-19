@@ -1,17 +1,20 @@
 package com.armutyus.cameraxproject.ui.gallery.preview.editmedia
 
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.sharp.ArrowBack
+import androidx.compose.material.icons.sharp.CheckCircle
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,21 +22,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
-import coil.imageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilter
 import jp.co.cyberagent.android.gpuimage.GPUImage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
 fun EditMediaContent(
@@ -42,22 +40,68 @@ fun EditMediaContent(
     imageFilters: List<ImageFilter>,
     gpuImage: GPUImage,
     setFilteredBitmap: (Bitmap) -> Unit,
-    selectedFilter: (String) -> Unit
+    selectedFilter: (String) -> Unit,
+    hasFilteredImage: Boolean,
+    cancelEditMode: () -> Unit,
+    onSaveTapped: () -> Unit
 ) {
 
     gpuImage.setImage(originalImageBitmap)
+
+    var isBackTapped by remember { mutableStateOf(false) }
+
+    BackHandler {
+        if (hasFilteredImage) {
+            isBackTapped = true
+        } else {
+            cancelEditMode()
+        }
+    }
+
+    if (isBackTapped) {
+        AlertDialog(
+            onDismissRequest = { /* */ },
+            text = { Text(text = stringResource(id = R.string.confirm_changes)) },
+            confirmButton = {
+                Button(onClick = {
+                    onSaveTapped()
+                    cancelEditMode()
+                    isBackTapped = false
+                }) {
+                    Text(text = stringResource(id = R.string.save_changes))
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    cancelEditMode()
+                    isBackTapped = false
+                }
+                ) {
+                    Text(text = stringResource(id = R.string.deny))
+                }
+            }
+        )
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            EditMediaTopContent(
+                navigateBack = {
+                    if (hasFilteredImage) {
+                        isBackTapped = true
+                    } else {
+                        cancelEditMode()
+                    }
+                },
+                onSaveTapped = onSaveTapped
+            )
             EditMediaMidContent(imageBitmap = filteredImageBitmap)
         }
         Column(
-            modifier = Modifier
-                .wrapContentSize(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom
         ) {
@@ -71,11 +115,39 @@ fun EditMediaContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditMediaTopContent(
-
+    navigateBack: () -> Unit,
+    onSaveTapped: () -> Unit
 ) {
-
+    AnimatedVisibility(
+        modifier = Modifier,
+        visible = true,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        TopAppBar(
+            modifier = Modifier.fillMaxWidth(),
+            navigationIcon = {
+                IconButton( onClick = { navigateBack() } ) {
+                    Icon(
+                        imageVector = Icons.Sharp.ArrowBack,
+                        contentDescription = stringResource(id = R.string.cancel)
+                    )
+                }
+            },
+            title = { Text(text = stringResource(id = R.string.edit), fontSize = 18.sp) },
+            actions = {
+                IconButton( onClick = { onSaveTapped() } ) {
+                    Icon(
+                        imageVector = Icons.Sharp.CheckCircle,
+                        contentDescription = stringResource(id = R.string.save)
+                    )
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -86,22 +158,20 @@ private fun EditMediaMidContent(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(6.dp)
             .clip(RectangleShape)
     ) {
         SubcomposeAsyncImage(
             model = imageBitmap,
             modifier = Modifier
-                .align(Alignment.Center)
                 .fillMaxSize(),
-            alignment = Alignment.Center,
+            alignment = Alignment.TopCenter,
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.High,
             contentDescription = ""
         ) {
             val painterState = painter.state
             if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
-                CircularProgressIndicator(Modifier.size(8.dp))
+                CircularProgressIndicator(Modifier.requiredSize(32.dp))
             } else {
                 SubcomposeAsyncImageContent()
             }
@@ -154,33 +224,19 @@ private fun ImageWithFilter(
             }
     ) {
 
-        val context = LocalContext.current
-        var bitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-        LaunchedEffect(Unit) {
-            CoroutineScope(Dispatchers.IO).launch {
-                val loader = context.imageLoader
-                val request = ImageRequest.Builder(context)
-                    .data(image)
-                    .build()
-                val result = (loader.execute(request) as SuccessResult).drawable
-                bitmap = (result as BitmapDrawable).bitmap
-            }
-        }
-
         SubcomposeAsyncImage(
-            model = bitmap,
+            model = image,
             modifier = Modifier
                 .align(Alignment.Center)
-                .height(160.dp)
-                .width(90.dp),
+                .fillMaxSize(),
             alignment = Alignment.Center,
             contentScale = ContentScale.FillBounds,
+            filterQuality = FilterQuality.Medium,
             contentDescription = ""
         ) {
             val painterState = painter.state
             if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
-                CircularProgressIndicator(Modifier.size(8.dp))
+                CircularProgressIndicator(Modifier.requiredSize(8.dp))
             } else {
                 SubcomposeAsyncImageContent()
             }

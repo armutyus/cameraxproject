@@ -1,5 +1,6 @@
 package com.armutyus.cameraxproject.ui.gallery.preview
 
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -37,6 +38,7 @@ import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditMediaContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.videoplayback.VideoPlaybackContent
+import com.armutyus.cameraxproject.util.LockScreenOrientation
 import com.armutyus.cameraxproject.util.toBitmap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -61,6 +63,9 @@ fun PreviewScreen(
             galleryViewModel.loadMedia().cancel()
         }
     }
+
+    LockScreenOrientation(orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+
     val context = LocalContext.current
     val media by galleryViewModel.mediaItems.observeAsState(mapOf())
     val state by previewViewModel.previewScreenState.observeAsState()
@@ -241,16 +246,18 @@ fun PreviewScreen(
                                 zoomState = true
                                 val gpuImage = GPUImage(context)
 
-                                var originalImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+                                var originalImageBitmap by remember(page) { mutableStateOf<Bitmap?>(null) }
 
-                                LaunchedEffect(currentList[page]) {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        originalImageBitmap =
-                                            currentList[page].uri!!.toBitmap(context)
-                                        previewViewModel.loadImageFilters(originalImageBitmap)
+                                DisposableEffect(page) {
+                                    originalImageBitmap =
+                                        currentList[page].uri!!.toBitmap(context)
+                                    previewViewModel.loadImageFilters(originalImageBitmap)
+                                    onDispose {
+                                        previewViewModel.loadImageFilters(originalImageBitmap).cancel()
                                     }
                                 }
 
+                                val hasFilteredImage by previewViewModel.imageHasFilter.observeAsState()
                                 val imageFilters by previewViewModel.imageFilterList.observeAsState()
                                 val filteredImageBitmap by previewViewModel.filteredBitmap.observeAsState()
 
@@ -261,7 +268,10 @@ fun PreviewScreen(
                                         imageFilters = imageFilters ?: emptyList(),
                                         gpuImage = gpuImage,
                                         setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
-                                        selectedFilter = { previewViewModel.selectedFilter(it) }
+                                        selectedFilter = { previewViewModel.selectedFilter(it) },
+                                        hasFilteredImage = hasFilteredImage ?: false,
+                                        cancelEditMode = { previewViewModel.onEvent(PreviewScreenEvent.CancelEditTapped) },
+                                        onSaveTapped = { previewViewModel.onEvent(PreviewScreenEvent.SaveTapped(context)) }
                                     )
                                 }
                             } else {

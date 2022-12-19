@@ -9,6 +9,6 @@ data class MediaItem(
     val uri: Uri? = Uri.EMPTY,
     val type: Type? = Type.UNKNOWN
 ) {
-    enum class Type { UNKNOWN, PHOTO, VIDEO }
+    enum class Type { UNKNOWN, PHOTO, VIDEO, EDIT }
     enum class Filter { ALL, PHOTOS, VIDEOS }
 }

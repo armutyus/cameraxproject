@@ -15,6 +15,7 @@ class Util {
         const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
         const val PHOTO_DIR = "Photos"
         const val VIDEO_DIR = "Videos"
+        const val EDIT_DIR = "Edited"
         const val PHOTO_EXTENSION = "jpg"
         const val VIDEO_EXTENSION = "mp4"
         const val RATIO_4_3_VALUE = 4.0 / 3.0

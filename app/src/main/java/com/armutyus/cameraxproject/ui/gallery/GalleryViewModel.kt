@@ -18,6 +18,7 @@ import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryState
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.util.FileManager
+import com.armutyus.cameraxproject.util.Util.Companion.EDIT_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_DIR
@@ -71,6 +72,17 @@ class GalleryViewModel constructor(
                 name = file.name,
                 uri = file.toUri(),
                 type = MediaItem.Type.VIDEO
+            )
+        } as List<MediaItem>
+
+        val editedMediaDir = fileManager.getPrivateFileDirectory(EDIT_DIR)
+        val editedMedia = editedMediaDir?.listFiles()?.mapIndexed { _, file ->
+            val takenTime = file.name.substring(0, 10).replace("-", "/")
+            MediaItem(
+                takenTime,
+                name = file.name,
+                uri = file.toUri(),
+                type = MediaItem.Type.EDIT
             )
         } as List<MediaItem>
 

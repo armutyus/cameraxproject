@@ -17,12 +17,16 @@ import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilt
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.repo.EditMediaRepository
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
+import com.armutyus.cameraxproject.util.FileManager
+import com.armutyus.cameraxproject.util.Util.Companion.EDIT_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import kotlinx.coroutines.launch
 import java.io.File
 
 class PreviewViewModel constructor(
+    private val fileManager: FileManager,
     private val navController: NavController,
     private val editMediaRepository: EditMediaRepository
 ) : ViewModel() {
@@ -43,7 +47,9 @@ class PreviewViewModel constructor(
             )
             is PreviewScreenEvent.ChangeBarState -> onChangeBarState(previewScreenEvent.zoomState)
             is PreviewScreenEvent.HideController -> hideController(previewScreenEvent.isPlaying)
+            is PreviewScreenEvent.SaveTapped -> saveFilteredImage(previewScreenEvent.context)
             PreviewScreenEvent.EditTapped -> onEditTapped()
+            PreviewScreenEvent.CancelEditTapped -> onCancelEditTapped()
             PreviewScreenEvent.PlayerViewTapped -> onPlayerViewTapped()
             PreviewScreenEvent.NavigateBack -> onNavigateBack()
         }
@@ -54,6 +60,15 @@ class PreviewViewModel constructor(
             isInEditMode = true,
             showBars = false
         )
+    }
+
+    private fun onCancelEditTapped() = viewModelScope.launch {
+        _previewScreenState.value = _previewScreenState.value!!.copy(
+            isInEditMode = false,
+            showBars = true
+        )
+        _imageHasFilter.value = false
+        _filteredBitmap.value = null
     }
 
     private fun onDeleteTapped(file: File) = viewModelScope.launch {
@@ -145,8 +160,17 @@ class PreviewViewModel constructor(
         return kotlin.runCatching {
             val previewWidth = 90
             val previewHeight = originalImage.height * previewWidth / originalImage.width
-            Bitmap.createScaledBitmap(originalImage, previewWidth, previewHeight, false)
+            Bitmap.createScaledBitmap(originalImage, previewWidth, previewHeight, true)
         }.getOrDefault(originalImage)
+    }
+
+    private fun saveFilteredImage(context: Context) = viewModelScope.launch {
+        if (_filteredBitmap.value == null || _imageHasFilter.value == false) {
+            Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()
+        } else {
+            fileManager.saveFilteredImageToFile(_filteredBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
+            Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun setImageFilterList(imageFilterList: List<ImageFilter>) = viewModelScope.launch {

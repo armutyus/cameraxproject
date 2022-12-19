@@ -44,9 +44,9 @@ fun Long.formatMinSec(): String {
 fun Uri.toBitmap(context: Context): Bitmap {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         val source = ImageDecoder.createSource(context.contentResolver, this)
-        ImageDecoder.decodeBitmap(source)
+        ImageDecoder.decodeBitmap(source).copy(Bitmap.Config.ARGB_8888, false)
     } else {
-        MediaStore.Images.Media.getBitmap(context.contentResolver, this)
+        MediaStore.Images.Media.getBitmap(context.contentResolver, this).copy(Bitmap.Config.ARGB_8888, false)
     }
 }
 

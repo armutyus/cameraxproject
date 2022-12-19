@@ -2,6 +2,7 @@ package com.armutyus.cameraxproject.ui.gallery
 
 import android.app.Activity
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
@@ -35,6 +36,7 @@ import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
+import com.armutyus.cameraxproject.util.LockScreenOrientation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +71,8 @@ fun GalleryScreen(
     LaunchedEffect(galleryViewModel) {
         galleryViewModel.loadMedia()
     }
+
+    LockScreenOrientation(orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
     BackHandler {
         if (state?.selectableMode == true) {
