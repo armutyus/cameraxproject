@@ -44,9 +44,6 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
 import jp.co.cyberagent.android.gpuimage.GPUImage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
@@ -246,14 +243,19 @@ fun PreviewScreen(
                                 zoomState = true
                                 val gpuImage = GPUImage(context)
 
-                                var originalImageBitmap by remember(page) { mutableStateOf<Bitmap?>(null) }
+                                var originalImageBitmap by remember(page) {
+                                    mutableStateOf<Bitmap?>(
+                                        null
+                                    )
+                                }
 
                                 DisposableEffect(page) {
                                     originalImageBitmap =
                                         currentList[page].uri!!.toBitmap(context)
                                     previewViewModel.loadImageFilters(originalImageBitmap)
                                     onDispose {
-                                        previewViewModel.loadImageFilters(originalImageBitmap).cancel()
+                                        previewViewModel.loadImageFilters(originalImageBitmap)
+                                            .cancel()
                                     }
                                 }
 
@@ -270,8 +272,18 @@ fun PreviewScreen(
                                         setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
                                         selectedFilter = { previewViewModel.selectedFilter(it) },
                                         hasFilteredImage = hasFilteredImage ?: false,
-                                        cancelEditMode = { previewViewModel.onEvent(PreviewScreenEvent.CancelEditTapped) },
-                                        onSaveTapped = { previewViewModel.onEvent(PreviewScreenEvent.SaveTapped(context)) }
+                                        cancelEditMode = {
+                                            previewViewModel.onEvent(
+                                                PreviewScreenEvent.CancelEditTapped
+                                            )
+                                        },
+                                        onSaveTapped = {
+                                            previewViewModel.onEvent(
+                                                PreviewScreenEvent.SaveTapped(
+                                                    context
+                                                )
+                                            )
+                                        }
                                     )
                                 }
                             } else {

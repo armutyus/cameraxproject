@@ -56,7 +56,11 @@ class MainActivity : ComponentActivity() {
                         if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                             return PhotoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
-                            return PreviewViewModel(fileManager, navController, editMediaRepository) as T
+                            return PreviewViewModel(
+                                fileManager,
+                                navController,
+                                editMediaRepository
+                            ) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                             return VideoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(GalleryViewModel::class.java))

@@ -46,7 +46,8 @@ fun Uri.toBitmap(context: Context): Bitmap {
         val source = ImageDecoder.createSource(context.contentResolver, this)
         ImageDecoder.decodeBitmap(source).copy(Bitmap.Config.ARGB_8888, false)
     } else {
-        MediaStore.Images.Media.getBitmap(context.contentResolver, this).copy(Bitmap.Config.ARGB_8888, false)
+        MediaStore.Images.Media.getBitmap(context.contentResolver, this)
+            .copy(Bitmap.Config.ARGB_8888, false)
     }
 }
 

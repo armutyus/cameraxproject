@@ -130,7 +130,7 @@ private fun EditMediaTopContent(
         TopAppBar(
             modifier = Modifier.fillMaxWidth(),
             navigationIcon = {
-                IconButton( onClick = { navigateBack() } ) {
+                IconButton(onClick = { navigateBack() }) {
                     Icon(
                         imageVector = Icons.Sharp.ArrowBack,
                         contentDescription = stringResource(id = R.string.cancel)
@@ -139,7 +139,7 @@ private fun EditMediaTopContent(
             },
             title = { Text(text = stringResource(id = R.string.edit), fontSize = 18.sp) },
             actions = {
-                IconButton( onClick = { onSaveTapped() } ) {
+                IconButton(onClick = { onSaveTapped() }) {
                     Icon(
                         imageVector = Icons.Sharp.CheckCircle,
                         contentDescription = stringResource(id = R.string.save)
