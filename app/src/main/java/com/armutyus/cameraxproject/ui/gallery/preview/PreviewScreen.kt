@@ -74,8 +74,16 @@ fun PreviewScreen(
 
     val currentFile = Uri.parse(filePath).toFile()
     val fileName = currentFile.nameWithoutExtension
-    val takenDate = fileName.substring(0, 10).replace("-", "/")
-    val takenTime = fileName.substring(11, 16).replace("-", ":")
+    val takenDate = if (fileName.startsWith("cXc")) {
+        fileName.substring(4, 14).replace("-", "/")
+    } else {
+        fileName.substring(0, 10).replace("-", "/")
+    }
+    val takenTime = if (fileName.startsWith("cXc")) {
+        fileName.substring(15, 20).replace("-", ":")
+    } else {
+        fileName.substring(11, 16).replace("-", ":")
+    }
 
     val bottomNavItems = listOf(
         BottomNavItem.Share,

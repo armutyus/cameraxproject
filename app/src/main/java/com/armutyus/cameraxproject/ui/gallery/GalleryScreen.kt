@@ -47,11 +47,17 @@ fun GalleryScreen(
 
     val state by galleryViewModel.galleryState.observeAsState()
     val media by galleryViewModel.mediaItems.observeAsState(mapOf())
+    val groupedMedia =
+        media.values.flatten().filterNot { it.name.startsWith("cXc") }
+            .groupBy { it.takenTime }
     val groupedPhotos =
         media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }
             .groupBy { it.takenTime }
     val groupedVideos =
         media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }
+            .groupBy { it.takenTime }
+    val editedMedia =
+        media.values.flatten().filter { it.name.startsWith("cXc") }
             .groupBy { it.takenTime }
 
     val context = LocalContext.current
@@ -60,7 +66,8 @@ fun GalleryScreen(
     val bottomNavItems = listOf(
         BottomNavItem.Gallery,
         BottomNavItem.Photos,
-        BottomNavItem.Videos
+        BottomNavItem.Videos,
+        BottomNavItem.Edits
     )
     val selectableModeItems = listOf(
         BottomNavItem.Cancel,
@@ -208,9 +215,10 @@ fun GalleryScreen(
             }
 
             when (filterContent) {
-                MediaItem.Filter.ALL -> media
+                MediaItem.Filter.ALL -> groupedMedia
                 MediaItem.Filter.PHOTOS -> groupedPhotos
                 MediaItem.Filter.VIDEOS -> groupedVideos
+                MediaItem.Filter.EDITS -> editedMedia
             }.let { map ->
                 GalleryScreenContent(
                     context = context,

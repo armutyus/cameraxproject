@@ -77,16 +77,16 @@ class GalleryViewModel constructor(
 
         val editedMediaDir = fileManager.getPrivateFileDirectory(EDIT_DIR)
         val editedMedia = editedMediaDir?.listFiles()?.mapIndexed { _, file ->
-            val takenTime = file.name.substring(0, 10).replace("-", "/")
+            val editTime = file.name.substring(4, 14).replace("-", "/")
             MediaItem(
-                takenTime,
+                editTime,
                 name = file.name,
                 uri = file.toUri(),
-                type = MediaItem.Type.EDIT
+                type = if (file.extension == "jpg") MediaItem.Type.PHOTO else MediaItem.Type.VIDEO
             )
         } as List<MediaItem>
 
-        media.addAll(photos + videos)
+        media.addAll(photos + videos + editedMedia)
 
         val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
         _mediaItems.value = groupedMedia
