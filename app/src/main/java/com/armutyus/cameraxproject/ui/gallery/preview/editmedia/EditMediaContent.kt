@@ -11,18 +11,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.ArrowBack
-import androidx.compose.material.icons.sharp.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,15 +34,23 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.armutyus.cameraxproject.R
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.EditModesItem
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilter
+import com.armutyus.cameraxproject.util.Util.Companion.CROP_MODE
+import com.armutyus.cameraxproject.util.Util.Companion.CROP_NAME
+import com.armutyus.cameraxproject.util.Util.Companion.FILTER_MODE
+import com.armutyus.cameraxproject.util.Util.Companion.FILTER_NAME
 import jp.co.cyberagent.android.gpuimage.GPUImage
 
 @Composable
 fun EditMediaContent(
     originalImageBitmap: Bitmap,
-    filteredImageBitmap: Bitmap,
+    editedImageBitmap: Bitmap,
+    editModeName: String,
     imageFilters: List<ImageFilter>,
     gpuImage: GPUImage,
+    onCropCancelClicked: () -> Unit,
+    onEditModeTapped: (String) -> Unit,
     setFilteredBitmap: (Bitmap) -> Unit,
     selectedFilter: (String) -> Unit,
     hasFilteredImage: Boolean,
@@ -83,33 +95,44 @@ fun EditMediaContent(
         )
     }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
-        ) {
-            EditMediaTopContent(
-                navigateBack = {
-                    if (hasFilteredImage) {
-                        isBackTapped = true
-                    } else {
-                        cancelEditMode()
-                    }
-                },
-                onSaveTapped = onSaveTapped
-            )
-            EditMediaMidContent(imageBitmap = filteredImageBitmap)
+    when (editModeName) {
+        FILTER_NAME -> {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                EditMediaMidContent(imageBitmap = editedImageBitmap)
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    EditMediaTopContent(
+                        navigateBack = {
+                            if (hasFilteredImage) {
+                                isBackTapped = true
+                            } else {
+                                cancelEditMode()
+                            }
+                        },
+                        onSaveTapped = onSaveTapped
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    EditMediaBottomContent(
+                        imageFilters = imageFilters,
+                        editModeName = editModeName,
+                        gpuImage = gpuImage,
+                        onEditModeTapped = { onEditModeTapped(it) },
+                        setFilteredBitmap = { setFilteredBitmap(it) }
+                    ) { selectedFilter(it) }
+                }
+            }
         }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            EditMediaBottomContent(
-                imageFilters = imageFilters,
-                gpuImage = gpuImage,
-                setFilteredBitmap = { setFilteredBitmap(it) },
-                selectedFilter = { selectedFilter(it) }
+        CROP_NAME -> {
+            ImageCropMode(
+                editedImageBitmap = editedImageBitmap.asImageBitmap(),
+                onCropCancelClicked = onCropCancelClicked
             )
         }
     }
@@ -128,7 +151,9 @@ private fun EditMediaTopContent(
         exit = fadeOut()
     ) {
         TopAppBar(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Transparent),
             navigationIcon = {
                 IconButton(onClick = { navigateBack() }) {
                     Icon(
@@ -139,11 +164,8 @@ private fun EditMediaTopContent(
             },
             title = { Text(text = stringResource(id = R.string.edit), fontSize = 18.sp) },
             actions = {
-                IconButton(onClick = { onSaveTapped() }) {
-                    Icon(
-                        imageVector = Icons.Sharp.CheckCircle,
-                        contentDescription = stringResource(id = R.string.save)
-                    )
+                TextButton(onClick = { onSaveTapped() }) {
+                    Text(text = stringResource(id = R.string.save))
                 }
             }
         )
@@ -162,8 +184,7 @@ private fun EditMediaMidContent(
     ) {
         SubcomposeAsyncImage(
             model = imageBitmap,
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             alignment = Alignment.TopCenter,
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.High,
@@ -171,7 +192,7 @@ private fun EditMediaMidContent(
         ) {
             val painterState = painter.state
             if (painterState is AsyncImagePainter.State.Loading || painterState is AsyncImagePainter.State.Error) {
-                CircularProgressIndicator(Modifier.requiredSize(32.dp))
+                CircularProgressIndicator(Modifier.size(32.dp))
             } else {
                 SubcomposeAsyncImageContent()
             }
@@ -183,12 +204,35 @@ private fun EditMediaMidContent(
 @Composable
 private fun EditMediaBottomContent(
     imageFilters: List<ImageFilter>,
+    editModeName: String,
     gpuImage: GPUImage,
+    onEditModeTapped: (String) -> Unit,
     setFilteredBitmap: (Bitmap) -> Unit,
     selectedFilter: (String) -> Unit
 ) {
+
+    val editModesList = listOf(
+        EditModesItem(FILTER_MODE, FILTER_NAME, editModeName == FILTER_NAME),
+        EditModesItem(CROP_MODE, CROP_NAME, editModeName == CROP_NAME)
+    )
+    val scrollState = rememberScrollState()
     val listState = rememberLazyListState()
-    Box {
+
+    Column(
+        modifier = Modifier
+            .verticalScroll(scrollState)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        LazyRow(contentPadding = PaddingValues(16.dp)) {
+            items(editModesList) { editMode ->
+                EditModesRow(editModesItem = editMode) {
+                    onEditModeTapped(it)
+                }
+            }
+        }
+
         LazyRow(state = listState) {
             items(imageFilters) { imageFilter ->
                 ImageWithFilter(
@@ -207,6 +251,31 @@ private fun EditMediaBottomContent(
 }
 
 @Composable
+fun EditModesRow(
+    editModesItem: EditModesItem,
+    onEditModeTapped: (String) -> Unit
+) {
+    TextButton(
+        onClick = {
+            if (!editModesItem.selected) {
+                onEditModeTapped(editModesItem.name)
+            }
+        }
+    ) {
+        Text(
+            text = editModesItem.name,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = if (editModesItem.selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.White
+            }
+        )
+    }
+}
+
+@Composable
 private fun ImageWithFilter(
     image: Bitmap,
     filterName: String,
@@ -216,7 +285,7 @@ private fun ImageWithFilter(
         modifier = Modifier
             .width(90.dp)
             .height(160.dp)
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color.Transparent)
             .padding(6.dp)
             .clip(MaterialTheme.shapes.medium)
             .clickable(enabled = true) {

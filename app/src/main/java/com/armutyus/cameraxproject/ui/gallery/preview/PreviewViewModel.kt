@@ -68,7 +68,7 @@ class PreviewViewModel constructor(
             showBars = true
         )
         _imageHasFilter.value = false
-        _filteredBitmap.value = null
+        _editedBitmap.value = null
     }
 
     private fun onDeleteTapped(file: File) = viewModelScope.launch {
@@ -134,13 +134,13 @@ class PreviewViewModel constructor(
             _previewScreenState.value?.copy(showMediaController = !isPlaying, showBars = !isPlaying)
     }
 
-    //EditMedia Works
+    //region:: EditMedia Works
 
     private val _imageFilterList: MutableLiveData<List<ImageFilter>> = MutableLiveData(emptyList())
     val imageFilterList: LiveData<List<ImageFilter>> = _imageFilterList
 
-    private val _filteredBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
-    val filteredBitmap: LiveData<Bitmap?> = _filteredBitmap
+    private val _editedBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
+    val editedBitmap: LiveData<Bitmap?> = _editedBitmap
 
     private val _imageHasFilter: MutableLiveData<Boolean> = MutableLiveData(false)
     val imageHasFilter: LiveData<Boolean> = _imageHasFilter
@@ -152,7 +152,7 @@ class PreviewViewModel constructor(
         }.onSuccess {
             setImageFilterList(it)
         }.onFailure {
-            Log.e(TAG, it.localizedMessage ?: "Bitmap with filter")
+            Log.e(TAG, it.localizedMessage ?: "Bitmaps with filter load failed.")
         }
     }
 
@@ -165,10 +165,10 @@ class PreviewViewModel constructor(
     }
 
     private fun saveFilteredImage(context: Context) = viewModelScope.launch {
-        if (_filteredBitmap.value == null || _imageHasFilter.value == false) {
+        if (_editedBitmap.value == null || _imageHasFilter.value == false) {
             Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()
         } else {
-            fileManager.saveFilteredImageToFile(_filteredBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
+            fileManager.saveFilteredImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
         }
     }
@@ -182,10 +182,14 @@ class PreviewViewModel constructor(
     }
 
     fun setFilteredBitmap(imageBitmap: Bitmap) = viewModelScope.launch {
-        _filteredBitmap.value = imageBitmap
+        _editedBitmap.value = imageBitmap
     }
 
-    //EditMedia End
+    fun switchEditMode(editModeName: String) = viewModelScope.launch {
+        _previewScreenState.value = _previewScreenState.value?.copy(switchEditMode = editModeName)
+    }
+
+    //endregion
 
     private fun navigateTo(route: String) = viewModelScope.launch {
         navController.navigate(route) {

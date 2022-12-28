@@ -24,6 +24,10 @@ class Util {
         const val GENERAL_ERROR_MESSAGE = "Something went wrong."
         const val PHOTO_MODE = 0
         const val VIDEO_MODE = 1
+        const val FILTER_MODE = 2
+        const val CROP_MODE = 3
+        const val FILTER_NAME = "Filter"
+        const val CROP_NAME = "Crop"
         const val UNKNOWN_ORIENTATION = -1
 
         const val GALLERY_ROUTE = "gallery_screen"

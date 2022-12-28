@@ -39,6 +39,7 @@ import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditMediaContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.videoplayback.VideoPlaybackContent
 import com.armutyus.cameraxproject.util.LockScreenOrientation
+import com.armutyus.cameraxproject.util.Util.Companion.FILTER_NAME
 import com.armutyus.cameraxproject.util.toBitmap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -195,7 +196,6 @@ fun PreviewScreen(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
-                                    offset.getDistance()
                                     if (scale >= 2f) {
                                         scale = 1f
                                         offsetX = 0f
@@ -206,8 +206,6 @@ fun PreviewScreen(
                                         offsetY -= offset.y
                                         rotationState = 0f
                                         zoomState = false
-                                        println("x: ${offset.x}")
-                                        println("y: ${offset.y}")
                                     }
                                 },
                                 onTap = {
@@ -269,14 +267,21 @@ fun PreviewScreen(
 
                                 val hasFilteredImage by previewViewModel.imageHasFilter.observeAsState()
                                 val imageFilters by previewViewModel.imageFilterList.observeAsState()
-                                val filteredImageBitmap by previewViewModel.filteredBitmap.observeAsState()
+                                val editedImageBitmap by previewViewModel.editedBitmap.observeAsState()
 
                                 originalImageBitmap?.let { bitmap ->
                                     EditMediaContent(
                                         originalImageBitmap = bitmap,
-                                        filteredImageBitmap = filteredImageBitmap ?: bitmap,
+                                        editedImageBitmap = editedImageBitmap ?: bitmap,
+                                        editModeName = state?.switchEditMode ?: FILTER_NAME,
                                         imageFilters = imageFilters ?: emptyList(),
                                         gpuImage = gpuImage,
+                                        onCropCancelClicked = {
+                                            previewViewModel.switchEditMode(
+                                                FILTER_NAME
+                                            )
+                                        },
+                                        onEditModeTapped = { previewViewModel.switchEditMode(it) },
                                         setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
                                         selectedFilter = { previewViewModel.selectedFilter(it) },
                                         hasFilteredImage = hasFilteredImage ?: false,
@@ -284,15 +289,14 @@ fun PreviewScreen(
                                             previewViewModel.onEvent(
                                                 PreviewScreenEvent.CancelEditTapped
                                             )
-                                        },
-                                        onSaveTapped = {
-                                            previewViewModel.onEvent(
-                                                PreviewScreenEvent.SaveTapped(
-                                                    context
-                                                )
-                                            )
                                         }
-                                    )
+                                    ) {
+                                        previewViewModel.onEvent(
+                                            PreviewScreenEvent.SaveTapped(
+                                                context
+                                            )
+                                        )
+                                    }
                                 }
                             } else {
                                 SubcomposeAsyncImage(
