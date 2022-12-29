@@ -5,6 +5,7 @@
     <string name="permissions_required">Permissions are required to use the app.</string>
     <string name="permissions_important">These permissions are important for the app. Please grant all of them for the app to function properly.</string>
     <string name="permissions_needed">Permissions needed!</string>
+    <string name="delete_item">Are you sure to delete the selected item?</string>
     <string name="delete_items">Are you sure to delete the selected items?</string>
     <string name="confirm_changes">Do you want to save your changes before exit?</string>
     <string name="no_item">No item selected.</string>

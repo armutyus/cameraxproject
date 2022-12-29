@@ -5,7 +5,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.sharp.Brush
@@ -33,6 +37,11 @@ import androidx.compose.ui.unit.dp
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.cropproperties.CropStyleSelectionMenu
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.cropproperties.PropertySelectionSheet
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.EditModesItem
+import com.armutyus.cameraxproject.util.Util.Companion.CROP_MODE
+import com.armutyus.cameraxproject.util.Util.Companion.CROP_NAME
+import com.armutyus.cameraxproject.util.Util.Companion.FILTER_MODE
+import com.armutyus.cameraxproject.util.Util.Companion.FILTER_NAME
 import com.smarttoolfactory.colorpicker.widget.drawChecker
 import com.smarttoolfactory.cropper.ImageCropper
 import com.smarttoolfactory.cropper.model.OutlineType
@@ -49,7 +58,9 @@ internal enum class SelectionPage {
 fun ImageCropMode(
     editedImageBitmap: ImageBitmap,
     isImageCropped: Boolean,
-    hasCroppedImage: (Bitmap?) -> Unit,
+    editModeName: String,
+    onEditModeTapped: (String) -> Unit,
+    setCroppedImage: (Bitmap?) -> Unit,
     setEditedBitmap: (Bitmap) -> Unit,
     cancelEditMode: () -> Unit,
     onSaveTapped: () -> Unit,
@@ -151,21 +162,37 @@ fun ImageCropMode(
             }
         },
     ) {
-        MainContent(
-            cropProperties = cropProperties,
-            cropStyle = cropStyle,
-            originalImageBitmap = editedImageBitmap,
-            setEditedBitmap = { setEditedBitmap(it) },
-            setCroppedImage = { hasCroppedImage(it) },
-            onCropCancelClicked = onCropCancelClicked,
-        ) {
-            selectionPage = it
+        Box {
+            Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+                EditMediaTopContent(
+                    navigateBack = {
+                        if (isImageCropped) {
+                            isBackTapped = true
+                        } else {
+                            cancelEditMode()
+                        }
+                    },
+                    onSaveTapped = onSaveTapped
+                )
+                MainContent(
+                    cropProperties = cropProperties,
+                    cropStyle = cropStyle,
+                    originalImageBitmap = editedImageBitmap,
+                    editModeName = editModeName,
+                    onEditModeTapped = { onEditModeTapped(it) },
+                    setEditedBitmap = { setEditedBitmap(it) },
+                    setCroppedImage = { setCroppedImage(it) },
+                    onCropCancelClicked = onCropCancelClicked,
+                ) {
+                    selectionPage = it
 
-            coroutineScope.launch {
-                if (bottomSheetState.isVisible) {
-                    bottomSheetState.hide()
-                } else {
-                    bottomSheetState.show()
+                    coroutineScope.launch {
+                        if (bottomSheetState.isVisible) {
+                            bottomSheetState.hide()
+                        } else {
+                            bottomSheetState.show()
+                        }
+                    }
                 }
             }
         }
@@ -177,6 +204,8 @@ private fun MainContent(
     cropProperties: CropProperties,
     cropStyle: CropStyle,
     originalImageBitmap: ImageBitmap,
+    editModeName: String,
+    onEditModeTapped: (String) -> Unit,
     setEditedBitmap: (Bitmap) -> Unit,
     setCroppedImage: (Bitmap?) -> Unit,
     onCropCancelClicked: () -> Unit,
@@ -194,15 +223,16 @@ private fun MainContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.DarkGray),
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)
         ) {
             ImageCropper(
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .weight(0.85f),
                 imageBitmap = croppedImage ?: imageBitmap,
                 contentDescription = "Image Cropper",
                 cropProperties = cropProperties,
@@ -217,51 +247,73 @@ private fun MainContent(
                 crop = false
                 showDialog = true
             }
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(
-                onClick = {
-                    onCropCancelClicked()
-                }
+            val editModesList = listOf(
+                EditModesItem(FILTER_MODE, FILTER_NAME, editModeName == FILTER_NAME),
+                EditModesItem(CROP_MODE, CROP_NAME, editModeName == CROP_NAME)
+            )
+            val scrollState = rememberScrollState()
+
+            Column(
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .fillMaxWidth()
+                    .weight(0.15f),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    Icons.Sharp.Cancel,
-                    contentDescription = "Cancel Crop"
-                )
-            }
-            IconButton(
-                onClick = {
-                    onSelectionPageMenuClicked(SelectionPage.Properties)
+                LazyRow(contentPadding = PaddingValues(8.dp)) {
+                    items(editModesList) { editMode ->
+                        EditModesRow(editModesItem = editMode) {
+                            onEditModeTapped(it)
+                        }
+                    }
                 }
-            ) {
-                Icon(
-                    Icons.Sharp.Settings,
-                    contentDescription = "Settings",
-                )
-            }
-            IconButton(
-                onClick = {
-                    onSelectionPageMenuClicked(SelectionPage.Style)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(
+                        onClick = {
+                            setCroppedImage(null)
+                            onCropCancelClicked()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Sharp.Cancel,
+                            contentDescription = "Cancel Crop"
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            onSelectionPageMenuClicked(SelectionPage.Properties)
+                        }
+                    ) {
+                        Icon(
+                            Icons.Sharp.Settings,
+                            contentDescription = "Settings",
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            onSelectionPageMenuClicked(SelectionPage.Style)
+                        }
+                    ) {
+                        Icon(Icons.Sharp.Brush, contentDescription = "Style")
+                    }
+                    IconButton(
+                        onClick = {
+                            crop = true
+                        }
+                    ) {
+                        Icon(
+                            Icons.Sharp.Crop,
+                            contentDescription = "Crop Image"
+                        )
+                    }
                 }
-            ) {
-                Icon(Icons.Sharp.Brush, contentDescription = "Style")
-            }
-            IconButton(
-                onClick = {
-                    crop = true
-                }
-            ) {
-                Icon(
-                    Icons.Sharp.Crop,
-                    contentDescription = "Crop Image"
-                )
             }
         }
 

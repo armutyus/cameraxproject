@@ -35,7 +35,7 @@ import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.models.BottomNavItem
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
-import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditMediaContent
+import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditImageContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.videoplayback.VideoPlaybackContent
 import com.armutyus.cameraxproject.util.LockScreenOrientation
@@ -67,6 +67,7 @@ fun PreviewScreen(
     val context = LocalContext.current
     val media by galleryViewModel.mediaItems.observeAsState(mapOf())
     val state by previewViewModel.previewScreenState.observeAsState()
+    var isDeleteTapped by remember { mutableStateOf(false) }
     var scale by remember { mutableStateOf(1f) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -156,11 +157,7 @@ fun PreviewScreen(
                                         previewViewModel.onEvent(PreviewScreenEvent.EditTapped)
                                     }
                                     BottomNavItem.Delete -> {
-                                        previewViewModel.onEvent(
-                                            PreviewScreenEvent.DeleteTapped(
-                                                currentFile
-                                            )
-                                        )
+                                        isDeleteTapped = true
                                     }
                                     else -> {}
                                 }
@@ -182,6 +179,31 @@ fun PreviewScreen(
                 currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }
             val initialItemIndex by remember { mutableStateOf(currentList.indexOf(initialItem)) }
             val pagerState = rememberPagerState(initialItemIndex)
+
+
+            if (isDeleteTapped) {
+                AlertDialog(onDismissRequest = { /* */ },
+                    title = { Text(text = stringResource(id = R.string.delete)) },
+                    text = { Text(text = stringResource(id = R.string.delete_item)) },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                previewViewModel.onEvent(PreviewScreenEvent.DeleteTapped(currentFile))
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.delete))
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = {
+                            isDeleteTapped = false
+                        }
+                        ) {
+                            Text(text = stringResource(id = R.string.cancel))
+                        }
+                    }
+                )
+            }
 
             HorizontalPager(
                 modifier = Modifier.fillMaxSize(),
@@ -255,24 +277,26 @@ fun PreviewScreen(
                                     )
                                 }
 
-                                DisposableEffect(page) {
-                                    originalImageBitmap =
-                                        currentList[page].uri!!.toBitmap(context)
-                                    previewViewModel.loadImageFilters(originalImageBitmap)
-                                    onDispose {
-                                        previewViewModel.loadImageFilters(originalImageBitmap)
-                                            .cancel()
-                                    }
-                                }
-
                                 val hasFilteredImage by previewViewModel.imageHasFilter.observeAsState()
                                 val isImageCropped by previewViewModel.isImageCropped.observeAsState()
                                 val imageFilters by previewViewModel.imageFilterList.observeAsState()
                                 val editedImageBitmap by previewViewModel.editedBitmap.observeAsState()
+                                val croppedImageBitmap by previewViewModel.croppedBitmap.observeAsState()
+
+                                LaunchedEffect(page, croppedImageBitmap) {
+                                    originalImageBitmap =
+                                        currentList[page].uri!!.toBitmap(context)
+                                    if (isImageCropped == true) {
+                                        previewViewModel.loadImageFilters(croppedImageBitmap)
+                                    } else {
+                                        previewViewModel.loadImageFilters(originalImageBitmap)
+                                    }
+                                }
 
                                 originalImageBitmap?.let { bitmap ->
-                                    EditMediaContent(
+                                    EditImageContent(
                                         originalImageBitmap = bitmap,
+                                        croppedImageBitmap = croppedImageBitmap ?: bitmap,
                                         editedImageBitmap = editedImageBitmap ?: bitmap,
                                         editModeName = state?.switchEditMode ?: FILTER_NAME,
                                         imageFilters = imageFilters ?: emptyList(),
@@ -282,7 +306,7 @@ fun PreviewScreen(
                                                 FILTER_NAME
                                             )
                                         },
-                                        hasCroppedImage = { previewViewModel.setImageCropped(it) },
+                                        setCroppedImage = { previewViewModel.setCroppedImage(it) },
                                         onEditModeTapped = { previewViewModel.switchEditMode(it) },
                                         setEditedBitmap = { previewViewModel.setEditedBitmap(it) },
                                         selectedFilter = { previewViewModel.selectedFilter(it) },
@@ -292,14 +316,15 @@ fun PreviewScreen(
                                             previewViewModel.onEvent(
                                                 PreviewScreenEvent.CancelEditTapped
                                             )
-                                        }
-                                    ) {
-                                        previewViewModel.onEvent(
-                                            PreviewScreenEvent.SaveTapped(
-                                                context
+                                        },
+                                        onSaveTapped = {
+                                            previewViewModel.onEvent(
+                                                PreviewScreenEvent.SaveTapped(
+                                                    context
+                                                )
                                             )
-                                        )
-                                    }
+                                        }
+                                    )
                                 }
                             } else {
                                 SubcomposeAsyncImage(

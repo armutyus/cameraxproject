@@ -32,8 +32,8 @@ class FileManager(private val context: Context) {
         }
     }
 
-    suspend fun saveFilteredImageToFile(bitmap: Bitmap, directory: String, ext: String) {
-        withContext(Dispatchers.IO) {
+    suspend fun saveEditedImageToFile(bitmap: Bitmap, directory: String, ext: String): String {
+        return withContext(Dispatchers.IO) {
             val timestamp = SimpleDateFormat(
                 FILENAME,
                 Locale.getDefault()
@@ -44,6 +44,7 @@ class FileManager(private val context: Context) {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
                 it.close()
             }
+            return@withContext file.canonicalPath
         }
     }
 

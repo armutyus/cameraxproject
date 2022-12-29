@@ -68,7 +68,9 @@ class PreviewViewModel constructor(
             showBars = true
         )
         _imageHasFilter.value = false
+        _isImageCropped.value = false
         _editedBitmap.value = null
+        _croppedBitmap.value = null
     }
 
     private fun onDeleteTapped(file: File) = viewModelScope.launch {
@@ -142,6 +144,9 @@ class PreviewViewModel constructor(
     private val _editedBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
     val editedBitmap: LiveData<Bitmap?> = _editedBitmap
 
+    private val _croppedBitmap: MutableLiveData<Bitmap?> = MutableLiveData()
+    val croppedBitmap: LiveData<Bitmap?> = _croppedBitmap
+
     private val _imageHasFilter: MutableLiveData<Boolean> = MutableLiveData(false)
     val imageHasFilter: LiveData<Boolean> = _imageHasFilter
 
@@ -169,7 +174,9 @@ class PreviewViewModel constructor(
 
     private fun saveEditedImage(context: Context) = viewModelScope.launch {
         if (_editedBitmap.value != null || _imageHasFilter.value == true) {
-            fileManager.saveFilteredImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
+            fileManager.saveEditedImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION).also {
+                onCancelEditTapped()
+            }
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()
@@ -180,8 +187,10 @@ class PreviewViewModel constructor(
         _imageFilterList.value = imageFilterList
     }
 
-    fun setImageCropped(croppedImage: Bitmap?) = viewModelScope.launch {
+    fun setCroppedImage(croppedImage: Bitmap?) = viewModelScope.launch {
         _isImageCropped.value = croppedImage != null
+        _croppedBitmap.value = croppedImage
+        _editedBitmap.value = croppedImage
     }
 
     fun selectedFilter(filterName: String) = viewModelScope.launch {

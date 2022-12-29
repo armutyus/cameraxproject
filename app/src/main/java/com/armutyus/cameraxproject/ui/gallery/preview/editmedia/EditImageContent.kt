@@ -43,14 +43,15 @@ import com.armutyus.cameraxproject.util.Util.Companion.FILTER_NAME
 import jp.co.cyberagent.android.gpuimage.GPUImage
 
 @Composable
-fun EditMediaContent(
+fun EditImageContent(
     originalImageBitmap: Bitmap,
+    croppedImageBitmap: Bitmap,
     editedImageBitmap: Bitmap,
     editModeName: String,
     imageFilters: List<ImageFilter>,
     gpuImage: GPUImage,
     onCropCancelClicked: () -> Unit,
-    hasCroppedImage: (Bitmap?) -> Unit,
+    setCroppedImage: (Bitmap?) -> Unit,
     onEditModeTapped: (String) -> Unit,
     setEditedBitmap: (Bitmap) -> Unit,
     selectedFilter: (String) -> Unit,
@@ -60,7 +61,11 @@ fun EditMediaContent(
     onSaveTapped: () -> Unit
 ) {
 
-    gpuImage.setImage(originalImageBitmap)
+    if (isImageCropped) {
+        gpuImage.setImage(croppedImageBitmap)
+    } else {
+        gpuImage.setImage(originalImageBitmap)
+    }
 
     var isBackTapped by remember { mutableStateOf(false) }
 
@@ -100,7 +105,9 @@ fun EditMediaContent(
     when (editModeName) {
         FILTER_NAME -> {
             Surface(modifier = Modifier.fillMaxSize()) {
-                EditMediaMidContent(imageBitmap = editedImageBitmap)
+                EditMediaMidContent(
+                    imageBitmap = if (isImageCropped && !hasFilteredImage) croppedImageBitmap else editedImageBitmap
+                )
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -135,7 +142,9 @@ fun EditMediaContent(
             ImageCropMode(
                 editedImageBitmap = editedImageBitmap.asImageBitmap(),
                 isImageCropped = isImageCropped,
-                hasCroppedImage = { hasCroppedImage(it) },
+                editModeName = editModeName,
+                onEditModeTapped = { onEditModeTapped(it) },
+                setCroppedImage = { setCroppedImage(it) },
                 setEditedBitmap = { setEditedBitmap(it) },
                 cancelEditMode = cancelEditMode,
                 onSaveTapped = onSaveTapped,
@@ -147,7 +156,7 @@ fun EditMediaContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditMediaTopContent(
+fun EditMediaTopContent(
     navigateBack: () -> Unit,
     onSaveTapped: () -> Unit
 ) {
@@ -192,7 +201,7 @@ private fun EditMediaMidContent(
         SubcomposeAsyncImage(
             model = imageBitmap,
             modifier = Modifier.fillMaxSize(),
-            alignment = Alignment.TopCenter,
+            alignment = Alignment.Center,
             contentScale = ContentScale.Fit,
             filterQuality = FilterQuality.High,
             contentDescription = ""
@@ -232,7 +241,7 @@ private fun EditMediaBottomContent(
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LazyRow(contentPadding = PaddingValues(16.dp)) {
+        LazyRow(contentPadding = PaddingValues(8.dp)) {
             items(editModesList) { editMode ->
                 EditModesRow(editModesItem = editMode) {
                     onEditModeTapped(it)
@@ -306,7 +315,7 @@ private fun ImageWithFilter(
                 .align(Alignment.Center)
                 .fillMaxSize(),
             alignment = Alignment.Center,
-            contentScale = ContentScale.FillBounds,
+            contentScale = ContentScale.Crop,
             filterQuality = FilterQuality.Medium,
             contentDescription = ""
         ) {
