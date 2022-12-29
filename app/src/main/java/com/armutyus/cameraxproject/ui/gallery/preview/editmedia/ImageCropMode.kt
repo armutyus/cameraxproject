@@ -1,5 +1,7 @@
 package com.armutyus.cameraxproject.ui.gallery.preview.editmedia
 
+import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,6 +13,7 @@ import androidx.compose.material.icons.sharp.Cancel
 import androidx.compose.material.icons.sharp.Crop
 import androidx.compose.material.icons.sharp.Settings
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.cropproperties.CropStyleSelectionMenu
@@ -43,8 +48,48 @@ internal enum class SelectionPage {
 @Composable
 fun ImageCropMode(
     editedImageBitmap: ImageBitmap,
+    isImageCropped: Boolean,
+    hasCroppedImage: (Bitmap?) -> Unit,
+    setEditedBitmap: (Bitmap) -> Unit,
+    cancelEditMode: () -> Unit,
+    onSaveTapped: () -> Unit,
     onCropCancelClicked: () -> Unit
 ) {
+
+    var isBackTapped by remember { mutableStateOf(false) }
+
+    BackHandler {
+        if (isImageCropped) {
+            isBackTapped = true
+        } else {
+            cancelEditMode()
+        }
+    }
+
+    if (isBackTapped) {
+        AlertDialog(
+            onDismissRequest = { /* */ },
+            text = { Text(text = stringResource(id = R.string.confirm_changes)) },
+            confirmButton = {
+                Button(onClick = {
+                    onSaveTapped()
+                    cancelEditMode()
+                    isBackTapped = false
+                }) {
+                    Text(text = stringResource(id = R.string.save_changes))
+                }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    cancelEditMode()
+                    isBackTapped = false
+                }
+                ) {
+                    Text(text = stringResource(id = R.string.deny))
+                }
+            }
+        )
+    }
 
     val bottomSheetState =
         rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
@@ -110,6 +155,8 @@ fun ImageCropMode(
             cropProperties = cropProperties,
             cropStyle = cropStyle,
             originalImageBitmap = editedImageBitmap,
+            setEditedBitmap = { setEditedBitmap(it) },
+            setCroppedImage = { hasCroppedImage(it) },
             onCropCancelClicked = onCropCancelClicked,
         ) {
             selectionPage = it
@@ -130,13 +177,15 @@ private fun MainContent(
     cropProperties: CropProperties,
     cropStyle: CropStyle,
     originalImageBitmap: ImageBitmap,
+    setEditedBitmap: (Bitmap) -> Unit,
+    setCroppedImage: (Bitmap?) -> Unit,
     onCropCancelClicked: () -> Unit,
     onSelectionPageMenuClicked: (SelectionPage) -> Unit
 ) {
 
     val imageBitmap by remember { mutableStateOf(originalImageBitmap) }
     var croppedImage by remember { mutableStateOf<ImageBitmap?>(null) }
-
+    setCroppedImage(croppedImage?.asAndroidBitmap())
 
     var crop by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
@@ -154,7 +203,7 @@ private fun MainContent(
             ImageCropper(
                 modifier = Modifier
                     .fillMaxWidth(),
-                imageBitmap = imageBitmap,
+                imageBitmap = croppedImage ?: imageBitmap,
                 contentDescription = "Image Cropper",
                 cropProperties = cropProperties,
                 cropStyle = cropStyle,
@@ -222,8 +271,14 @@ private fun MainContent(
     }
 
     if (showDialog) {
-        croppedImage?.let {
-            ShowCroppedImageDialog(imageBitmap = it) {
+        croppedImage?.let { croppedBitmap ->
+            ShowCroppedImageDialog(
+                imageBitmap = croppedBitmap,
+                setEditedBitmap = {
+                    setEditedBitmap(croppedBitmap.asAndroidBitmap())
+                    showDialog = !showDialog
+                }
+            ) {
                 showDialog = !showDialog
                 croppedImage = null
             }
@@ -232,7 +287,11 @@ private fun MainContent(
 }
 
 @Composable
-private fun ShowCroppedImageDialog(imageBitmap: ImageBitmap, onDismissRequest: () -> Unit) {
+private fun ShowCroppedImageDialog(
+    imageBitmap: ImageBitmap,
+    setEditedBitmap: () -> Unit,
+    onDismissRequest: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         text = {
@@ -249,7 +308,7 @@ private fun ShowCroppedImageDialog(imageBitmap: ImageBitmap, onDismissRequest: (
         confirmButton = {
             TextButton(
                 onClick = {
-                    onDismissRequest()
+                    setEditedBitmap()
                 }
             ) {
                 Text("Confirm")

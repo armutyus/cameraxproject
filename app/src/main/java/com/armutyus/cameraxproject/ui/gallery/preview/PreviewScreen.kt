@@ -266,6 +266,7 @@ fun PreviewScreen(
                                 }
 
                                 val hasFilteredImage by previewViewModel.imageHasFilter.observeAsState()
+                                val isImageCropped by previewViewModel.isImageCropped.observeAsState()
                                 val imageFilters by previewViewModel.imageFilterList.observeAsState()
                                 val editedImageBitmap by previewViewModel.editedBitmap.observeAsState()
 
@@ -281,9 +282,11 @@ fun PreviewScreen(
                                                 FILTER_NAME
                                             )
                                         },
+                                        hasCroppedImage = { previewViewModel.setImageCropped(it) },
                                         onEditModeTapped = { previewViewModel.switchEditMode(it) },
-                                        setFilteredBitmap = { previewViewModel.setFilteredBitmap(it) },
+                                        setEditedBitmap = { previewViewModel.setEditedBitmap(it) },
                                         selectedFilter = { previewViewModel.selectedFilter(it) },
+                                        isImageCropped = isImageCropped ?: false,
                                         hasFilteredImage = hasFilteredImage ?: false,
                                         cancelEditMode = {
                                             previewViewModel.onEvent(

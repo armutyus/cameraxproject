@@ -50,9 +50,11 @@ fun EditMediaContent(
     imageFilters: List<ImageFilter>,
     gpuImage: GPUImage,
     onCropCancelClicked: () -> Unit,
+    hasCroppedImage: (Bitmap?) -> Unit,
     onEditModeTapped: (String) -> Unit,
-    setFilteredBitmap: (Bitmap) -> Unit,
+    setEditedBitmap: (Bitmap) -> Unit,
     selectedFilter: (String) -> Unit,
+    isImageCropped: Boolean,
     hasFilteredImage: Boolean,
     cancelEditMode: () -> Unit,
     onSaveTapped: () -> Unit
@@ -124,7 +126,7 @@ fun EditMediaContent(
                         editModeName = editModeName,
                         gpuImage = gpuImage,
                         onEditModeTapped = { onEditModeTapped(it) },
-                        setFilteredBitmap = { setFilteredBitmap(it) }
+                        setFilteredBitmap = { setEditedBitmap(it) }
                     ) { selectedFilter(it) }
                 }
             }
@@ -132,6 +134,11 @@ fun EditMediaContent(
         CROP_NAME -> {
             ImageCropMode(
                 editedImageBitmap = editedImageBitmap.asImageBitmap(),
+                isImageCropped = isImageCropped,
+                hasCroppedImage = { hasCroppedImage(it) },
+                setEditedBitmap = { setEditedBitmap(it) },
+                cancelEditMode = cancelEditMode,
+                onSaveTapped = onSaveTapped,
                 onCropCancelClicked = onCropCancelClicked
             )
         }

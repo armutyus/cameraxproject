@@ -47,7 +47,7 @@ class PreviewViewModel constructor(
             )
             is PreviewScreenEvent.ChangeBarState -> onChangeBarState(previewScreenEvent.zoomState)
             is PreviewScreenEvent.HideController -> hideController(previewScreenEvent.isPlaying)
-            is PreviewScreenEvent.SaveTapped -> saveFilteredImage(previewScreenEvent.context)
+            is PreviewScreenEvent.SaveTapped -> saveEditedImage(previewScreenEvent.context)
             PreviewScreenEvent.EditTapped -> onEditTapped()
             PreviewScreenEvent.CancelEditTapped -> onCancelEditTapped()
             PreviewScreenEvent.PlayerViewTapped -> onPlayerViewTapped()
@@ -145,6 +145,9 @@ class PreviewViewModel constructor(
     private val _imageHasFilter: MutableLiveData<Boolean> = MutableLiveData(false)
     val imageHasFilter: LiveData<Boolean> = _imageHasFilter
 
+    private val _isImageCropped: MutableLiveData<Boolean> = MutableLiveData(false)
+    val isImageCropped: LiveData<Boolean> = _isImageCropped
+
     fun loadImageFilters(bitmap: Bitmap?) = viewModelScope.launch {
         kotlin.runCatching {
             val image = getPreviewImage(originalImage = bitmap!!)
@@ -164,12 +167,12 @@ class PreviewViewModel constructor(
         }.getOrDefault(originalImage)
     }
 
-    private fun saveFilteredImage(context: Context) = viewModelScope.launch {
-        if (_editedBitmap.value == null || _imageHasFilter.value == false) {
-            Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()
-        } else {
+    private fun saveEditedImage(context: Context) = viewModelScope.launch {
+        if (_editedBitmap.value != null || _imageHasFilter.value == true) {
             fileManager.saveFilteredImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -177,11 +180,15 @@ class PreviewViewModel constructor(
         _imageFilterList.value = imageFilterList
     }
 
+    fun setImageCropped(croppedImage: Bitmap?) = viewModelScope.launch {
+        _isImageCropped.value = croppedImage != null
+    }
+
     fun selectedFilter(filterName: String) = viewModelScope.launch {
         _imageHasFilter.value = filterName != "Normal"
     }
 
-    fun setFilteredBitmap(imageBitmap: Bitmap) = viewModelScope.launch {
+    fun setEditedBitmap(imageBitmap: Bitmap) = viewModelScope.launch {
         _editedBitmap.value = imageBitmap
     }
 
