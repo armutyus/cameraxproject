@@ -163,7 +163,7 @@ fun ImageCropMode(
         },
     ) {
         Box {
-            Column(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight().align(Alignment.TopCenter)) {
                 EditMediaTopContent(
                     navigateBack = {
                         if (isImageCropped) {

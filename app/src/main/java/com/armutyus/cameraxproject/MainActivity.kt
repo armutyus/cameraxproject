@@ -27,9 +27,9 @@ import com.armutyus.cameraxproject.ui.video.VideoScreen
 import com.armutyus.cameraxproject.ui.video.VideoViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Permissions
+import com.armutyus.cameraxproject.util.Util.Companion.ALL_CONTENT
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
-import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_ROUTE
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
@@ -137,11 +137,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             composable(
-                                route = "preview_screen/?filePath={filePath}",
+                                route = "preview_screen/?filePath={filePath}/?contentFilter={contentFilter}",
                                 arguments = listOf(
                                     navArgument("filePath") {
                                         type = NavType.StringType
                                         defaultValue = ""
+                                    },
+                                    navArgument("contentFilter") {
+                                        type = NavType.StringType
+                                        defaultValue = ALL_CONTENT
                                     }
                                 ),
                                 enterTransition = {
@@ -158,13 +162,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             ) {
                                 val filePath = remember { it.arguments?.getString("filePath") }
+                                val contentFilter = remember { it.arguments?.getString("contentFilter") }
                                 PreviewScreen(
+                                    contentFilter = contentFilter ?: "ALL",
                                     filePath = filePath ?: "",
                                     factory = viewModelFactory
                                 )
-                            }
-                            composable(SETTINGS_ROUTE) {
-                                //SettingsScreen(navController = navController)
                             }
                         }
                     })

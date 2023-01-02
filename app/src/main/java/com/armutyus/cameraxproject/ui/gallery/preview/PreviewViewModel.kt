@@ -175,6 +175,7 @@ class PreviewViewModel constructor(
     private fun saveEditedImage(context: Context) = viewModelScope.launch {
         if (_editedBitmap.value != null || _imageHasFilter.value == true) {
             fileManager.saveEditedImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION).also {
+                navigateTo("preview_screen/?filePath=${it}")
                 onCancelEditTapped()
             }
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
@@ -210,10 +211,9 @@ class PreviewViewModel constructor(
     private fun navigateTo(route: String) = viewModelScope.launch {
         navController.navigate(route) {
             popUpTo(navController.graph.startDestinationId) {
-                saveState = true
+                inclusive = true
             }
             launchSingleTop = true
-            restoreState = true
         }
     }
 

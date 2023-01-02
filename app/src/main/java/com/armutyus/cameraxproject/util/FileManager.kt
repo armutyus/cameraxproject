@@ -2,6 +2,8 @@ package com.armutyus.cameraxproject.util
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.core.net.toUri
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,7 +34,7 @@ class FileManager(private val context: Context) {
         }
     }
 
-    suspend fun saveEditedImageToFile(bitmap: Bitmap, directory: String, ext: String): String {
+    suspend fun saveEditedImageToFile(bitmap: Bitmap, directory: String, ext: String): Uri {
         return withContext(Dispatchers.IO) {
             val timestamp = SimpleDateFormat(
                 FILENAME,
@@ -44,7 +46,7 @@ class FileManager(private val context: Context) {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
                 it.close()
             }
-            return@withContext file.canonicalPath
+            return@withContext file.toUri()
         }
     }
 

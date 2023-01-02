@@ -29,10 +29,13 @@ class Util {
         const val FILTER_NAME = "Filter"
         const val CROP_NAME = "Crop"
         const val UNKNOWN_ORIENTATION = -1
+        const val ALL_CONTENT = "ALL"
+        const val PHOTO_CONTENT = "PHOTOS"
+        const val VIDEO_CONTENT = "VIDEOS"
+        const val EDIT_CONTENT = "EDITS"
 
         const val GALLERY_ROUTE = "gallery_screen"
         const val PHOTO_ROUTE = "photo_screen"
-        const val SETTINGS_ROUTE = "settings_screen"
         const val VIDEO_ROUTE = "video_screen"
 
         const val TIMER_OFF = 0

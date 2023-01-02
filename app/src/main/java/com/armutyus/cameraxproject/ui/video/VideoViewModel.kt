@@ -21,7 +21,6 @@ import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_ROUTE
-import com.armutyus.cameraxproject.util.Util.Companion.SETTINGS_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.TAG
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_EXTENSION
@@ -41,7 +40,6 @@ class VideoViewModel constructor(
             VideoEvent.FlashTapped -> onFlashTapped()
             VideoEvent.FlipTapped -> onFlipTapped()
             VideoEvent.DelayTimerTapped -> onDelayTimerTapped()
-            VideoEvent.SettingsTapped -> onSettingsTapped()
             VideoEvent.SetVideoQuality -> onSetVideoQuality()
             VideoEvent.SwitchToPhoto -> switchCameraMode()
             is VideoEvent.ThumbnailTapped -> onThumbnailTapped(videoEvent.uri)
@@ -197,10 +195,6 @@ class VideoViewModel constructor(
             Util.TIMER_10S -> _videoState.value!!.copy(delayTimer = Util.TIMER_OFF)
             else -> _videoState.value!!.copy(delayTimer = Util.TIMER_OFF)
         }
-    }
-
-    private fun onSettingsTapped() = viewModelScope.launch {
-        navigateTo(SETTINGS_ROUTE)
     }
 
     private fun onCameraInitialized(cameraLensInfo: HashMap<Int, CameraInfo>) {

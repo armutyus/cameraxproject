@@ -509,7 +509,7 @@ fun CameraEditIcon(rotation: Int, onTapped: () -> Unit) {
                     else -> 0f
                 }
             ),
-        onClick = { },
+        onClick = { onTapped() },
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = MaterialTheme.colorScheme.primary
         ),

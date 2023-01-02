@@ -37,6 +37,10 @@ import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
 import com.armutyus.cameraxproject.ui.theme.CameraXProjectTheme
 import com.armutyus.cameraxproject.util.LockScreenOrientation
+import com.armutyus.cameraxproject.util.Util.Companion.ALL_CONTENT
+import com.armutyus.cameraxproject.util.Util.Companion.EDIT_CONTENT
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_CONTENT
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_CONTENT
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +55,7 @@ fun GalleryScreen(
         media.values.flatten().filterNot { it.name.startsWith("cXc") }
             .groupBy { it.takenTime }
     val groupedPhotos =
-        media.values.flatten().filter { it.type == MediaItem.Type.PHOTO }
+        media.values.flatten().filter { it.type == MediaItem.Type.PHOTO && it.name.startsWith("2") }
             .groupBy { it.takenTime }
     val groupedVideos =
         media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }
@@ -220,8 +224,18 @@ fun GalleryScreen(
                 MediaItem.Filter.VIDEOS -> groupedVideos
                 MediaItem.Filter.EDITS -> editedMedia
             }.let { map ->
+                var contentFilter by remember { mutableStateOf(ALL_CONTENT) }
+                LaunchedEffect(map) {
+                    when (map) {
+                        groupedMedia -> contentFilter = ALL_CONTENT
+                        groupedPhotos -> contentFilter = PHOTO_CONTENT
+                        groupedVideos -> contentFilter = VIDEO_CONTENT
+                        editedMedia -> contentFilter = EDIT_CONTENT
+                    }
+                }
                 GalleryScreenContent(
                     context = context,
+                    contentFilter = contentFilter,
                     groupedMedia = map,
                     selectableMode = state?.selectableMode == true,
                     galleryViewModel = galleryViewModel
@@ -237,6 +251,7 @@ fun GalleryScreen(
 @Composable
 fun GalleryScreenContent(
     context: Context,
+    contentFilter: String,
     groupedMedia: Map<String, List<MediaItem>>,
     selectableMode: Boolean,
     galleryViewModel: GalleryViewModel,
@@ -271,7 +286,8 @@ fun GalleryScreenContent(
                             onItemClicked = {
                                 if (!selectableMode) onEvent(
                                     GalleryEvent.ItemClicked(
-                                        it
+                                        it,
+                                        contentFilter
                                     )
                                 )
                             }

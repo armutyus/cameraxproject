@@ -39,7 +39,11 @@ import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.EditImageContent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.videoplayback.VideoPlaybackContent
 import com.armutyus.cameraxproject.util.LockScreenOrientation
+import com.armutyus.cameraxproject.util.Util.Companion.ALL_CONTENT
+import com.armutyus.cameraxproject.util.Util.Companion.EDIT_CONTENT
 import com.armutyus.cameraxproject.util.Util.Companion.FILTER_NAME
+import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_CONTENT
+import com.armutyus.cameraxproject.util.Util.Companion.VIDEO_CONTENT
 import com.armutyus.cameraxproject.util.toBitmap
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
@@ -50,6 +54,7 @@ import jp.co.cyberagent.android.gpuimage.GPUImage
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
 fun PreviewScreen(
+    contentFilter: String,
     filePath: String,
     factory: ViewModelProvider.Factory,
     previewViewModel: PreviewViewModel = viewModel(factory = factory),
@@ -173,7 +178,17 @@ fun PreviewScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            val currentList = media.values.flatten()
+            val groupedMedia = media.values.flatten().filterNot { it.name.startsWith("cXc") }
+            val groupedPhotos = media.values.flatten().filter { it.type == MediaItem.Type.PHOTO && it.name.startsWith("2") }
+            val groupedVideos = media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }
+            val editedMedia = media.values.flatten().filter { it.name.startsWith("cXc") }
+            val currentList = when (contentFilter) {
+                ALL_CONTENT -> groupedMedia
+                PHOTO_CONTENT -> groupedPhotos
+                VIDEO_CONTENT -> groupedVideos
+                EDIT_CONTENT -> editedMedia
+                else -> groupedMedia
+            }
             val count = currentList.size
             val initialItem =
                 currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }

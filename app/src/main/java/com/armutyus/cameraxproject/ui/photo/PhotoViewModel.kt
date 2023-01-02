@@ -1,7 +1,9 @@
 package com.armutyus.cameraxproject.ui.photo
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -11,6 +13,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
 import com.armutyus.cameraxproject.ui.photo.models.PhotoState
 import com.armutyus.cameraxproject.util.FileManager
@@ -41,6 +44,7 @@ class PhotoViewModel constructor(
             PhotoEvent.FlipTapped -> onFlipTapped()
             PhotoEvent.SettingsTapped -> onSettingsTapped()
 
+            is PhotoEvent.EditIconTapped -> onEditIconTapped(photoEvent.context)
             is PhotoEvent.ThumbnailTapped -> onThumbnailTapped(photoEvent.uri)
             is PhotoEvent.CaptureTapped -> onCaptureTapped(
                 photoEvent.timeMillis,
@@ -73,6 +77,10 @@ class PhotoViewModel constructor(
             TIMER_10S -> _photoState.value!!.copy(delayTimer = TIMER_OFF)
             else -> _photoState.value!!.copy(delayTimer = TIMER_OFF)
         }
+    }
+
+    private fun onEditIconTapped(context: Context) = viewModelScope.launch {
+        Toast.makeText(context, R.string.feature_not_available,Toast.LENGTH_SHORT).show()
     }
 
     private fun onFlashTapped() = viewModelScope.launch {

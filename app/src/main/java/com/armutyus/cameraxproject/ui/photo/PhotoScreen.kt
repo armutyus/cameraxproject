@@ -1,11 +1,11 @@
 package com.armutyus.cameraxproject.ui.photo
 
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.View
-import android.widget.Toast
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.border
@@ -33,7 +33,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.CameraModesItem
 import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
@@ -133,13 +132,6 @@ fun PhotoScreen(
             imageUri = latestCapturedPhoto,
             view = view,
             rotation = rotation,
-            onEditIconTapped = {
-                Toast.makeText(
-                    context,
-                    R.string.feature_not_available,
-                    Toast.LENGTH_SHORT
-                ).show()
-            },
             onEvent = photoViewModel::onEvent
         )
     }
@@ -158,7 +150,6 @@ private fun PhotoScreenContent(
     imageUri: Uri?,
     view: View,
     rotation: Int,
-    onEditIconTapped: () -> Unit,
     onEvent: (PhotoEvent) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -173,20 +164,15 @@ private fun PhotoScreenContent(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val context = LocalContext.current
                 TopControls(
                     showFlashIcon = hasFlashUnit,
                     delayTimer = delayTimer,
                     flashMode = flashMode,
                     rotation = rotation,
-                    onEditIconTapped = { onEditIconTapped() },
-                    onDelayTimerTapped = { onEvent(PhotoEvent.DelayTimerTapped) },
-                    onFlashTapped = { onEvent(PhotoEvent.FlashTapped) }
-                ) { onEvent(PhotoEvent.SettingsTapped) }
-                /*if (captureWithDelay == DELAY_3S) {
-                    DelayTimer(millisInFuture = captureWithDelay.toLong())
-                } else if (captureWithDelay == DELAY_10S) {
-                    DelayTimer(millisInFuture = captureWithDelay.toLong())
-                }*/
+                    onEditIconTapped = { onEvent(PhotoEvent.EditIconTapped(context)) },
+                    onDelayTimerTapped = { onEvent(PhotoEvent.DelayTimerTapped) }
+                ) { onEvent(PhotoEvent.FlashTapped) }
             }
             Column(
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -230,8 +216,7 @@ internal fun TopControls(
     rotation: Int,
     onEditIconTapped: () -> Unit,
     onDelayTimerTapped: () -> Unit,
-    onFlashTapped: () -> Unit,
-    onSettingsTapped: () -> Unit
+    onFlashTapped: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -259,7 +244,6 @@ internal fun TopControls(
                 onTapped = onFlashTapped
             )
             CameraEditIcon(rotation = rotation) { onEditIconTapped() }
-            SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
         }
     }
 }

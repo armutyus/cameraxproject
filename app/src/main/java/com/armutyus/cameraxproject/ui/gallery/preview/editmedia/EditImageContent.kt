@@ -212,7 +212,6 @@ private fun EditMediaMidContent(
             } else {
                 SubcomposeAsyncImageContent()
             }
-            println("PainterState: $painterState")
         }
     }
 }
@@ -251,7 +250,7 @@ private fun EditMediaBottomContent(
 
         LazyRow(state = listState) {
             items(imageFilters) { imageFilter ->
-                ImageWithFilter(
+                ImageFilterMode(
                     image = imageFilter.filterPreview,
                     filterName = imageFilter.name
                 ) {
@@ -292,7 +291,7 @@ fun EditModesRow(
 }
 
 @Composable
-private fun ImageWithFilter(
+private fun ImageFilterMode(
     image: Bitmap,
     filterName: String,
     onClick: () -> Unit
@@ -300,7 +299,7 @@ private fun ImageWithFilter(
     Box(
         modifier = Modifier
             .width(90.dp)
-            .height(160.dp)
+            .height(90.dp)
             .background(Color.Transparent)
             .padding(6.dp)
             .clip(MaterialTheme.shapes.medium)
@@ -316,7 +315,7 @@ private fun ImageWithFilter(
                 .fillMaxSize(),
             alignment = Alignment.Center,
             contentScale = ContentScale.Crop,
-            filterQuality = FilterQuality.Medium,
+            filterQuality = FilterQuality.High,
             contentDescription = ""
         ) {
             val painterState = painter.state
@@ -325,7 +324,6 @@ private fun ImageWithFilter(
             } else {
                 SubcomposeAsyncImageContent()
             }
-            println("PainterState: $painterState")
         }
         Text(
             text = filterName,

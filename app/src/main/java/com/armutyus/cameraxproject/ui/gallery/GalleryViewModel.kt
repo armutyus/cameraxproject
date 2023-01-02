@@ -38,7 +38,7 @@ class GalleryViewModel constructor(
 
     fun onEvent(galleryEvent: GalleryEvent) {
         when (galleryEvent) {
-            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item)
+            is GalleryEvent.ItemClicked -> onItemClicked(galleryEvent.item, galleryEvent.contentFilter)
             is GalleryEvent.ShareTapped -> onShareTapped(galleryEvent.context)
             GalleryEvent.FabClicked -> onFabClicked()
             GalleryEvent.SelectAllClicked -> changeSelectAllState()
@@ -113,9 +113,9 @@ class GalleryViewModel constructor(
         _galleryState.value = _galleryState.value!!.copy(selectAllClicked = newValue)
     }
 
-    private fun onItemClicked(item: MediaItem?) = viewModelScope.launch {
+    private fun onItemClicked(item: MediaItem?, contentFilter: String) = viewModelScope.launch {
         val uri = item?.uri
-        navigateTo("preview_screen/?filePath=${uri?.toString()}")
+        navigateTo("preview_screen/?filePath=${uri?.toString()}/?contentFilter=${contentFilter}")
     }
 
     private fun onItemLongClicked() = viewModelScope.launch {

@@ -189,11 +189,8 @@ private fun VideoScreenContent(
                         rotation = rotation,
                         quality = quality,
                         onDelayTimerTapped = { onEvent(VideoEvent.DelayTimerTapped) },
-                        onFlashTapped = { onEvent(VideoEvent.FlashTapped) },
-                        onQualitySelectorTapped = { onEvent(VideoEvent.SetVideoQuality) }
-                    ) {
-                        onEvent(VideoEvent.SettingsTapped)
-                    }
+                        onFlashTapped = { onEvent(VideoEvent.FlashTapped) }
+                    ) { onEvent(VideoEvent.SetVideoQuality) }
                 }
                 if (recordedLength > 0) {
                     Timer(
@@ -254,8 +251,7 @@ internal fun VideoTopControls(
     quality: Quality,
     onDelayTimerTapped: () -> Unit,
     onFlashTapped: () -> Unit,
-    onQualitySelectorTapped: () -> Unit,
-    onSettingsTapped: () -> Unit
+    onQualitySelectorTapped: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -285,7 +281,6 @@ internal fun VideoTopControls(
             QualitySelectorIcon(rotation = rotation, quality = quality) {
                 onQualitySelectorTapped()
             }
-            SettingsIcon(rotation = rotation, onTapped = onSettingsTapped)
         }
     }
 }
