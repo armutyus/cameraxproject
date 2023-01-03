@@ -3,6 +3,7 @@ package com.armutyus.cameraxproject.ui.gallery.preview
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -161,7 +162,15 @@ fun PreviewScreen(
                                         )
                                     }
                                     BottomNavItem.EditItem -> {
-                                        previewViewModel.onEvent(PreviewScreenEvent.EditTapped)
+                                        if (currentFile.extension == "mp4") {
+                                            Toast.makeText(
+                                                context,
+                                                R.string.feature_not_available,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            previewViewModel.onEvent(PreviewScreenEvent.EditTapped)
+                                        }
                                     }
                                     BottomNavItem.Delete -> {
                                         isDeleteTapped = true
@@ -237,14 +246,20 @@ fun PreviewScreen(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = { offset ->
-                                    if (scale >= 2f) {
+                                    if (scale >= 4.5f) {
                                         scale = 1f
                                         offsetX = 0f
                                         offsetY = 0f
+                                    } else if (scale >= 2f) {
+                                        scale = 5f
+                                        /*offsetX -= offset.x
+                                        offsetY -= offset.y*/
+                                        rotationState = 0f
+                                        zoomState = false
                                     } else {
-                                        scale = 3f
-                                        offsetX -= offset.x
-                                        offsetY -= offset.y
+                                        scale = 2.5f
+                                        /*offsetX -= offset.x
+                                        offsetY -= offset.y*/
                                         rotationState = 0f
                                         zoomState = false
                                     }

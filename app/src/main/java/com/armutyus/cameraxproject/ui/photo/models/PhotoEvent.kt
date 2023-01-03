@@ -22,5 +22,4 @@ sealed class PhotoEvent {
     object DelayTimerTapped : PhotoEvent()
     object FlashTapped : PhotoEvent()
     object FlipTapped : PhotoEvent()
-    object SettingsTapped : PhotoEvent()
 }

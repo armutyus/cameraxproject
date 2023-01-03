@@ -12,10 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.sharp.Brush
-import androidx.compose.material.icons.sharp.Cancel
-import androidx.compose.material.icons.sharp.Crop
-import androidx.compose.material.icons.sharp.Settings
+import androidx.compose.material.icons.sharp.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -289,7 +286,7 @@ private fun MainContent(
                         }
                     ) {
                         Icon(
-                            Icons.Sharp.Cancel,
+                            Icons.Sharp.Close,
                             contentDescription = "Cancel Crop"
                         )
                     }
@@ -316,7 +313,7 @@ private fun MainContent(
                         }
                     ) {
                         Icon(
-                            Icons.Sharp.Crop,
+                            Icons.Sharp.Done,
                             contentDescription = "Crop Image"
                         )
                     }
