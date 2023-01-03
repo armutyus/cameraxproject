@@ -79,7 +79,9 @@ fun PreviewScreen(
     var rotationState by remember { mutableStateOf(0f) }
     var zoomState by remember { mutableStateOf(false) }
 
-    val currentFile = Uri.parse(filePath).toFile()
+
+    val initialFile = Uri.parse(filePath).toFile()
+    var currentFile by remember { mutableStateOf(initialFile) }
     val fileName = currentFile.nameWithoutExtension
     val takenDate = if (fileName.startsWith("cXc")) {
         fileName.substring(4, 14).replace("-", "/")
@@ -179,7 +181,8 @@ fun PreviewScreen(
                 .padding(paddingValues)
         ) {
             val groupedMedia = media.values.flatten().filterNot { it.name.startsWith("cXc") }
-            val groupedPhotos = media.values.flatten().filter { it.type == MediaItem.Type.PHOTO && it.name.startsWith("2") }
+            val groupedPhotos = media.values.flatten()
+                .filter { it.type == MediaItem.Type.PHOTO && it.name.startsWith("2") }
             val groupedVideos = media.values.flatten().filter { it.type == MediaItem.Type.VIDEO }
             val editedMedia = media.values.flatten().filter { it.name.startsWith("cXc") }
             val currentList = when (contentFilter) {
@@ -191,10 +194,11 @@ fun PreviewScreen(
             }
             val count = currentList.size
             val initialItem =
-                currentList.firstOrNull { mediaItem -> mediaItem.name == currentFile.name }
+                currentList.firstOrNull { mediaItem -> mediaItem.name == initialFile.name }
             val initialItemIndex by remember { mutableStateOf(currentList.indexOf(initialItem)) }
             val pagerState = rememberPagerState(initialItemIndex)
 
+            currentFile = currentList[pagerState.currentPage].uri!!.toFile()
 
             if (isDeleteTapped) {
                 AlertDialog(onDismissRequest = { /* */ },

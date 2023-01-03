@@ -80,7 +80,7 @@ class PhotoViewModel constructor(
     }
 
     private fun onEditIconTapped(context: Context) = viewModelScope.launch {
-        Toast.makeText(context, R.string.feature_not_available,Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, R.string.feature_not_available, Toast.LENGTH_SHORT).show()
     }
 
     private fun onFlashTapped() = viewModelScope.launch {

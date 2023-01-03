@@ -174,10 +174,11 @@ class PreviewViewModel constructor(
 
     private fun saveEditedImage(context: Context) = viewModelScope.launch {
         if (_editedBitmap.value != null || _imageHasFilter.value == true) {
-            fileManager.saveEditedImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION).also {
-                navigateTo("preview_screen/?filePath=${it}")
-                onCancelEditTapped()
-            }
+            fileManager.saveEditedImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
+                .also {
+                    navigateTo("preview_screen/?filePath=${it}")
+                    onCancelEditTapped()
+                }
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, R.string.no_changes_on_image, Toast.LENGTH_SHORT).show()

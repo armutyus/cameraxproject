@@ -162,7 +162,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             ) {
                                 val filePath = remember { it.arguments?.getString("filePath") }
-                                val contentFilter = remember { it.arguments?.getString("contentFilter") }
+                                val contentFilter =
+                                    remember { it.arguments?.getString("contentFilter") }
                                 PreviewScreen(
                                     contentFilter = contentFilter ?: "ALL",
                                     filePath = filePath ?: "",

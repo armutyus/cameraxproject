@@ -1,6 +1,5 @@
 package com.armutyus.cameraxproject.ui.photo
 
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.view.OrientationEventListener
