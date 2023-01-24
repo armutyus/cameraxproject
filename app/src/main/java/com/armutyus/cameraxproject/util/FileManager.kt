@@ -15,7 +15,7 @@ import java.util.*
 class FileManager(private val context: Context) {
 
     fun getPrivateFileDirectory(dir: String): File? {
-        val directory = File(context.getExternalFilesDir("cameraXproject"), dir)
+        val directory = File(context.getExternalFilesDir("cXc"), dir)
         return if (directory.exists() || directory.mkdirs()) {
             directory
         } else context.filesDir
