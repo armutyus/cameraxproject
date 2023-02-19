@@ -5,16 +5,17 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
+import androidx.navigation.*
 import com.armutyus.cameraxproject.ui.gallery.GalleryScreen
 import com.armutyus.cameraxproject.ui.gallery.GalleryViewModel
 import com.armutyus.cameraxproject.ui.gallery.preview.PreviewScreen
@@ -75,68 +76,20 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             startDestination = GALLERY_ROUTE
                         ) {
-                            composable(
-                                GALLERY_ROUTE,
-                                enterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                exitTransition = {
-                                    fadeOut(tween(700))
-                                },
-                                popEnterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                popExitTransition = {
-                                    fadeOut(tween(700))
-                                }
-                            ) {
-                                GalleryScreen(
-                                    factory = viewModelFactory,
-                                )
+                            composableWithDefaultAnimation(GALLERY_ROUTE) {
+                                GalleryScreen(factory = viewModelFactory)
                             }
-                            composable(
-                                PHOTO_ROUTE,
-                                enterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                exitTransition = {
-                                    fadeOut(tween(700))
-                                },
-                                popEnterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                popExitTransition = {
-                                    fadeOut(tween(700))
-                                }
-                            ) {
-                                PhotoScreen(
-                                    factory = viewModelFactory
-                                ) {
+                            composableWithDefaultAnimation(route = PHOTO_ROUTE) {
+                                PhotoScreen(factory = viewModelFactory) {
                                     showMessage(this@MainActivity, it)
                                 }
                             }
-                            composable(
-                                VIDEO_ROUTE,
-                                enterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                exitTransition = {
-                                    fadeOut(tween(700))
-                                },
-                                popEnterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                popExitTransition = {
-                                    fadeOut(tween(700))
-                                }
-                            ) {
-                                VideoScreen(
-                                    factory = viewModelFactory
-                                ) {
+                            composableWithDefaultAnimation(route = VIDEO_ROUTE) {
+                                VideoScreen(factory = viewModelFactory) {
                                     showMessage(this@MainActivity, it)
                                 }
                             }
-                            composable(
+                            composableWithDefaultAnimation(
                                 route = "preview_screen/?filePath={filePath}/?contentFilter={contentFilter}",
                                 arguments = listOf(
                                     navArgument("filePath") {
@@ -148,19 +101,7 @@ class MainActivity : ComponentActivity() {
                                         defaultValue = ALL_CONTENT
                                     }
                                 ),
-                                enterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                exitTransition = {
-                                    fadeOut(tween(700))
-                                },
-                                popEnterTransition = {
-                                    fadeIn(tween(700))
-                                },
-                                popExitTransition = {
-                                    fadeOut(tween(700))
-                                }
-                            ) {
+                            ){
                                 val filePath = remember { it.arguments?.getString("filePath") }
                                 val contentFilter =
                                     remember { it.arguments?.getString("contentFilter") }
@@ -179,4 +120,29 @@ class MainActivity : ComponentActivity() {
 
 private fun showMessage(context: Context, message: String) {
     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+private fun NavGraphBuilder.composableWithDefaultAnimation(
+    route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
+    content: @Composable AnimatedVisibilityScope.(NavBackStackEntry) -> Unit
+) {
+    composable(
+        route = route,
+        arguments = arguments,
+        enterTransition = {
+            fadeIn(tween(700))
+        },
+        exitTransition = {
+            fadeOut(tween(700))
+        },
+        popEnterTransition = {
+            fadeIn(tween(700))
+        },
+        popExitTransition = {
+            fadeOut(tween(700))
+        },
+        content = content
+    )
 }
