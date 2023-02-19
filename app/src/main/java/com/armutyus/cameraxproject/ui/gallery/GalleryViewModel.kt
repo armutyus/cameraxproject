@@ -91,7 +91,7 @@ class GalleryViewModel constructor(
 
         media.addAll(photos + videos + editedMedia)
 
-        val groupedMedia = media.sortedByDescending { it.takenTime }.groupBy { it.takenTime }
+        val groupedMedia = media.sortedByDescending { it.name }.groupBy { it.takenTime }
         _mediaItems.value = groupedMedia
     }
 
