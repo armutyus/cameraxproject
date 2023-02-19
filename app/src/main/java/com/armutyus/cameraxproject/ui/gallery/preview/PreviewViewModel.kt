@@ -18,6 +18,7 @@ import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.repo.EditMediaRe
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
 import com.armutyus.cameraxproject.util.FileManager
+import com.armutyus.cameraxproject.util.Util.Companion.EDIT_CONTENT
 import com.armutyus.cameraxproject.util.Util.Companion.EDIT_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.GALLERY_ROUTE
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_EXTENSION
@@ -176,7 +177,7 @@ class PreviewViewModel constructor(
         if (_editedBitmap.value != null || _imageHasFilter.value == true) {
             fileManager.saveEditedImageToFile(_editedBitmap.value!!, EDIT_DIR, PHOTO_EXTENSION)
                 .also {
-                    navigateTo("preview_screen/?filePath=${it}")
+                    navigateTo("preview_screen/?filePath=${it}/?contentFilter=${EDIT_CONTENT}")
                     onCancelEditTapped()
                 }
             Toast.makeText(context, R.string.edited_image_saved, Toast.LENGTH_SHORT).show()
@@ -212,7 +213,7 @@ class PreviewViewModel constructor(
     private fun navigateTo(route: String) = viewModelScope.launch {
         navController.navigate(route) {
             popUpTo(navController.graph.startDestinationId) {
-                inclusive = true
+                inclusive = false
             }
             launchSingleTop = true
         }
