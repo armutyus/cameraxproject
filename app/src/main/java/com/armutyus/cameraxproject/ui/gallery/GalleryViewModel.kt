@@ -10,13 +10,13 @@ import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryEvent
 import com.armutyus.cameraxproject.ui.gallery.models.GalleryState
 import com.armutyus.cameraxproject.ui.gallery.models.MediaItem
+import com.armutyus.cameraxproject.util.BaseViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.EDIT_DIR
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
@@ -26,8 +26,8 @@ import kotlinx.coroutines.launch
 
 class GalleryViewModel constructor(
     private val fileManager: FileManager,
-    private val navController: NavController
-) : ViewModel() {
+    navController: NavController
+) : BaseViewModel(navController)  {
 
     private val _galleryState: MutableLiveData<GalleryState> = MutableLiveData(GalleryState())
     val galleryState: LiveData<GalleryState> = _galleryState
@@ -187,15 +187,5 @@ class GalleryViewModel constructor(
         cancelDeleteAction()
         cancelSelectableMode()
         loadMedia()
-    }
-
-    private fun navigateTo(route: String) {
-        navController.navigate(route) {
-            popUpTo(navController.graph.startDestinationId) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
-        }
     }
 }

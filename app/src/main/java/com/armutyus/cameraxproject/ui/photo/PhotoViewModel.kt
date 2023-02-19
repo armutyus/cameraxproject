@@ -10,12 +10,12 @@ import androidx.camera.core.ImageCapture
 import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
 import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
 import com.armutyus.cameraxproject.ui.photo.models.PhotoState
+import com.armutyus.cameraxproject.util.BaseViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
 import com.armutyus.cameraxproject.util.Util.Companion.PHOTO_DIR
@@ -30,8 +30,8 @@ import kotlinx.coroutines.launch
 
 class PhotoViewModel constructor(
     private val fileManager: FileManager,
-    private val navController: NavController
-) : ViewModel() {
+    navController: NavController
+) : BaseViewModel(navController) {
 
     private val _photoState: MutableLiveData<PhotoState> = MutableLiveData(PhotoState())
     val photoState: LiveData<PhotoState> = _photoState
@@ -139,15 +139,4 @@ class PhotoViewModel constructor(
                     .copy(lens = _photoState.value!!.lens ?: defaultLens, lensInfo = cameraLensInfo)
             }
         }
-
-    private fun navigateTo(route: String) {
-        navController.navigate(route) {
-            popUpTo(navController.graph.startDestinationId) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
-        }
-    }
-
 }

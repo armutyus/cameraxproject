@@ -10,13 +10,13 @@ import androidx.camera.video.Quality
 import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.video.models.RecordingStatus
 import com.armutyus.cameraxproject.ui.video.models.VideoEvent
 import com.armutyus.cameraxproject.ui.video.models.VideoState
+import com.armutyus.cameraxproject.util.BaseViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util
 import com.armutyus.cameraxproject.util.Util.Companion.CAPTURE_FAIL
@@ -29,8 +29,8 @@ import kotlinx.coroutines.launch
 
 class VideoViewModel constructor(
     private val fileManager: FileManager,
-    private val navController: NavController
-) : ViewModel() {
+    navController: NavController
+) : BaseViewModel(navController) {
 
     private val _videoState: MutableLiveData<VideoState> = MutableLiveData(VideoState())
     val videoState: LiveData<VideoState> = _videoState
@@ -211,16 +211,6 @@ class VideoViewModel constructor(
                 lens = _videoState.value!!.lens ?: defaultLens,
                 lensInfo = cameraLensInfo
             )
-        }
-    }
-
-    private fun navigateTo(route: String) {
-        navController.navigate(route) {
-            popUpTo(navController.graph.startDestinationId) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
         }
     }
 }
