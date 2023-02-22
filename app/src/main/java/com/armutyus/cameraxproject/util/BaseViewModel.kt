@@ -1,7 +1,9 @@
 package com.armutyus.cameraxproject.util
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 
 open class BaseViewModel(private val navController: NavController): ViewModel() {
 
@@ -14,4 +16,9 @@ open class BaseViewModel(private val navController: NavController): ViewModel() 
             restoreState = true
         }
     }
+
+    fun onNavigateBack() {
+        navController.popBackStack()
+    }
+
 }

@@ -270,7 +270,7 @@ fun GalleryScreenContent(
                 )
             }
             items(
-                items = mediaForTakenTime.chunked(numberOfItemsByRow)
+                items = mediaForTakenTime.sortedByDescending { it.name }.chunked(numberOfItemsByRow)
             ) { mediaList ->
                 Row(
                     modifier = Modifier.padding(vertical = 1.dp, horizontal = 4.dp),

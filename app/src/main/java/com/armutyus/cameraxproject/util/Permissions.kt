@@ -1,6 +1,7 @@
 package com.armutyus.cameraxproject.util
 
 import android.app.Activity
+import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,11 +24,20 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 @ExperimentalPermissionsApi
 @Composable
 fun Permissions(
-    permissions: List<String> = listOf(
-        android.Manifest.permission.CAMERA,
-        android.Manifest.permission.READ_EXTERNAL_STORAGE,
-        android.Manifest.permission.RECORD_AUDIO
-    ),
+    permissions: List<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        listOf(
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.READ_MEDIA_IMAGES,
+            android.Manifest.permission.READ_MEDIA_VIDEO,
+            android.Manifest.permission.RECORD_AUDIO
+        )
+    } else {
+        listOf(
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.RECORD_AUDIO
+        )
+           },
     permissionGrantedContent: @Composable () -> Unit = { }
 ) {
     val permissionsState = rememberMultiplePermissionsState(permissions = permissions)

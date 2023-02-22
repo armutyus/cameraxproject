@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.armutyus.cameraxproject.R
@@ -17,6 +16,7 @@ import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.models.ImageFilt
 import com.armutyus.cameraxproject.ui.gallery.preview.editmedia.repo.EditMediaRepository
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenEvent
 import com.armutyus.cameraxproject.ui.gallery.preview.models.PreviewScreenState
+import com.armutyus.cameraxproject.util.BaseViewModel
 import com.armutyus.cameraxproject.util.FileManager
 import com.armutyus.cameraxproject.util.Util.Companion.EDIT_CONTENT
 import com.armutyus.cameraxproject.util.Util.Companion.EDIT_DIR
@@ -27,10 +27,10 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class PreviewViewModel constructor(
+    private val editMediaRepository: EditMediaRepository,
     private val fileManager: FileManager,
-    private val navController: NavController,
-    private val editMediaRepository: EditMediaRepository
-) : ViewModel() {
+    navController: NavController
+) : BaseViewModel(navController) {
 
     private val _previewScreenState: MutableLiveData<PreviewScreenState> =
         MutableLiveData(PreviewScreenState())
@@ -209,18 +209,5 @@ class PreviewViewModel constructor(
     }
 
     //endregion
-
-    private fun navigateTo(route: String) = viewModelScope.launch {
-        navController.navigate(route) {
-            popUpTo(navController.graph.startDestinationId) {
-                inclusive = false
-            }
-            launchSingleTop = true
-        }
-    }
-
-    private fun onNavigateBack() = viewModelScope.launch {
-        navController.popBackStack()
-    }
 
 }

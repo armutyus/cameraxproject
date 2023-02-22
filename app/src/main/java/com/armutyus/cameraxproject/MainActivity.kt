@@ -57,11 +57,7 @@ class MainActivity : ComponentActivity() {
                         if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                             return PhotoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
-                            return PreviewViewModel(
-                                fileManager,
-                                navController,
-                                editMediaRepository
-                            ) as T
+                            return PreviewViewModel(editMediaRepository, fileManager, navController) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                             return VideoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
@@ -106,7 +102,7 @@ class MainActivity : ComponentActivity() {
                                 val contentFilter =
                                     remember { it.arguments?.getString("contentFilter") }
                                 PreviewScreen(
-                                    contentFilter = contentFilter ?: "ALL",
+                                    contentFilter = contentFilter ?: ALL_CONTENT,
                                     filePath = filePath ?: "",
                                     factory = viewModelFactory
                                 )
