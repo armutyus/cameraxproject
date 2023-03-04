@@ -37,7 +37,7 @@ fun Permissions(
             android.Manifest.permission.READ_EXTERNAL_STORAGE,
             android.Manifest.permission.RECORD_AUDIO
         )
-           },
+    },
     permissionGrantedContent: @Composable () -> Unit = { }
 ) {
     val permissionsState = rememberMultiplePermissionsState(permissions = permissions)

@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi
 class Util {
     companion object {
         const val TAG = "CameraXProject"
+        const val APP_NAME = "cXc"
         const val FILENAME = "yyyy-MM-dd-HH-mm-ss-SSS"
         const val PHOTO_DIR = "Photos"
         const val VIDEO_DIR = "Videos"

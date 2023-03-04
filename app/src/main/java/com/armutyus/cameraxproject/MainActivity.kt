@@ -57,7 +57,11 @@ class MainActivity : ComponentActivity() {
                         if (modelClass.isAssignableFrom(PhotoViewModel::class.java))
                             return PhotoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(PreviewViewModel::class.java))
-                            return PreviewViewModel(editMediaRepository, fileManager, navController) as T
+                            return PreviewViewModel(
+                                editMediaRepository,
+                                fileManager,
+                                navController
+                            ) as T
                         if (modelClass.isAssignableFrom(VideoViewModel::class.java))
                             return VideoViewModel(fileManager, navController) as T
                         if (modelClass.isAssignableFrom(GalleryViewModel::class.java))
@@ -97,7 +101,7 @@ class MainActivity : ComponentActivity() {
                                         defaultValue = ALL_CONTENT
                                     }
                                 ),
-                            ){
+                            ) {
                                 val filePath = remember { it.arguments?.getString("filePath") }
                                 val contentFilter =
                                     remember { it.arguments?.getString("contentFilter") }

@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class GalleryViewModel constructor(
     private val fileManager: FileManager,
     navController: NavController
-) : BaseViewModel(navController)  {
+) : BaseViewModel(navController) {
 
     private val _galleryState: MutableLiveData<GalleryState> = MutableLiveData(GalleryState())
     val galleryState: LiveData<GalleryState> = _galleryState

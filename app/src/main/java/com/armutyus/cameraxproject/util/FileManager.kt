@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.net.toUri
+import com.armutyus.cameraxproject.util.Util.Companion.APP_NAME
 import com.armutyus.cameraxproject.util.Util.Companion.FILENAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,7 +16,7 @@ import java.util.*
 class FileManager(private val context: Context) {
 
     fun getPrivateFileDirectory(dir: String): File? {
-        val directory = File(context.getExternalFilesDir("cXc"), dir)
+        val directory = File(context.getExternalFilesDir(APP_NAME), dir)
         return if (directory.exists() || directory.mkdirs()) {
             directory
         } else context.filesDir

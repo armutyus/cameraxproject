@@ -37,6 +37,7 @@ import com.armutyus.cameraxproject.ui.photo.models.CameraState
 import com.armutyus.cameraxproject.ui.photo.models.PhotoEvent
 import com.armutyus.cameraxproject.ui.photo.models.PreviewPhotoState
 import com.armutyus.cameraxproject.util.*
+import com.armutyus.cameraxproject.util.Util.Companion.APP_NAME
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_10S
 import com.armutyus.cameraxproject.util.Util.Companion.DELAY_3S
 import com.armutyus.cameraxproject.util.Util.Companion.GENERAL_ERROR_MESSAGE
@@ -113,7 +114,7 @@ fun PhotoScreen(
             .apply { photoListener = listener }
     }
 
-    val mediaDir = context.getExternalFilesDir("cameraXproject")?.let {
+    val mediaDir = context.getExternalFilesDir(APP_NAME)?.let {
         File(it, PHOTO_DIR).apply { mkdirs() }
     }
 
